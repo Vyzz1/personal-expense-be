@@ -7,6 +7,7 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,14 +29,21 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     @Override
     public Optional<Category> findById(UUID id) {
-        CategoryJpaEntity entity = entityManager.find(CategoryJpaEntity.class, id);
+        CategoryJpaEntity entity = entityManager.createQuery(
+                        "SELECT c FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NULL",
+                        CategoryJpaEntity.class)
+                .setParameter("id", id)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+
         return Optional.ofNullable(entity).map(categoryMapper::toDomain);
     }
 
     @Override
     public List<Category> findAll() {
         return entityManager
-                .createQuery("SELECT c FROM CategoryJpaEntity c", CategoryJpaEntity.class)
+                .createQuery("SELECT c FROM CategoryJpaEntity c WHERE c.isDeleted IS NOT NULL ", CategoryJpaEntity.class)
                 .getResultList()
                 .stream()
                 .map(categoryMapper::toDomain)
@@ -44,16 +52,23 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     @Override
     public void deleteById(UUID id) {
-        CategoryJpaEntity entity = entityManager.find(CategoryJpaEntity.class, id);
-        if (entity != null) {
-            entityManager.remove(entity);
+        Optional<CategoryJpaEntity> entity = entityManager.createQuery(
+                        "SELECT c FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NULL",
+                        CategoryJpaEntity.class)
+                .setParameter("id", id)
+                .getResultStream()
+                .findFirst();
+
+        if (entity.isPresent()) {
+            entity.get().setIsDeleted(Instant.now());
+            entityManager.merge(entity.get());
         }
     }
 
     @Override
     public boolean existsById(UUID id) {
         Long count = entityManager
-                .createQuery("SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.id = :id", Long.class)
+                .createQuery("SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NOT NULL " , Long.class)
                 .setParameter("id", id)
                 .getSingleResult();
         return count > 0;
@@ -63,7 +78,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     public boolean existsByNameAndUserId(String name, String userId) {
         Long count = entityManager
                 .createQuery(
-                        "SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.name = :name AND c.userId = :userId",
+                        "SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.name = :name AND c.userId = :userId AND c.isDeleted IS NULL",
                         Long.class)
                 .setParameter("name", name)
                 .setParameter("userId", userId)
