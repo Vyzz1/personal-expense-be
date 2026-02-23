@@ -9,7 +9,7 @@ public record CategoryResponse(
         UUID id,
         String name,
         String userId,
-        UUID parentId,
+        CategoryResponse parent,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -18,7 +18,7 @@ public record CategoryResponse(
                 category.getId(),
                 category.getName(),
                 category.getUserId(),
-                category.getParentId(),
+                category.getParent() != null ? CategoryResponse.from(category.getParent()) : null,
                 category.getCreatedAt(),
                 category.getUpdatedAt()
         );
