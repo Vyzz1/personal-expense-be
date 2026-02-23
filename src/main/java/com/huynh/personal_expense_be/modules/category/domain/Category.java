@@ -20,6 +20,8 @@ public class Category {
 
     private UUID parentId;
 
+    private Category parent;
+
     private Instant createdAt;
 
     private Instant updatedAt;

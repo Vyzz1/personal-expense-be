@@ -9,8 +9,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -24,7 +26,8 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     public Category save(Category category) {
         CategoryJpaEntity entity = categoryMapper.toJpaEntity(category);
         CategoryJpaEntity saved = entityManager.merge(entity);
-        return categoryMapper.toDomain(saved);
+        Category parent = resolveParent(saved.getParentId());
+        return categoryMapper.toDomain(saved, parent);
     }
 
     @Override
@@ -37,17 +40,44 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
                 .findFirst()
                 .orElse(null);
 
-        return Optional.ofNullable(entity).map(categoryMapper::toDomain);
+        if (entity == null) return Optional.empty();
+        Category parent = resolveParent(entity.getParentId());
+        return Optional.of(categoryMapper.toDomain(entity, parent));
     }
 
     @Override
     public List<Category> findAll() {
-        return entityManager
-                .createQuery("SELECT c FROM CategoryJpaEntity c WHERE c.isDeleted IS  NULL ", CategoryJpaEntity.class)
-                .getResultList()
-                .stream()
-                .map(categoryMapper::toDomain)
+        List<CategoryJpaEntity> entities = entityManager
+                .createQuery("SELECT c FROM CategoryJpaEntity c WHERE c.isDeleted IS NULL", CategoryJpaEntity.class)
+                .getResultList();
+
+        Map<UUID, CategoryJpaEntity> entityMap = entities.stream()
+                .collect(Collectors.toMap(CategoryJpaEntity::getId, e -> e));
+
+        return entities.stream()
+                .map(e -> {
+                    Category parent = null;
+                    if (e.getParentId() != null) {
+                        CategoryJpaEntity parentEntity = entityMap.get(e.getParentId());
+                        if (parentEntity != null) {
+                            parent = categoryMapper.toDomain(parentEntity);
+                        }
+                    }
+                    return categoryMapper.toDomain(e, parent);
+                })
                 .toList();
+    }
+
+    private Category resolveParent(UUID parentId) {
+        if (parentId == null) return null;
+        CategoryJpaEntity parentEntity = entityManager.createQuery(
+                        "SELECT c FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NULL",
+                        CategoryJpaEntity.class)
+                .setParameter("id", parentId)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+        return parentEntity != null ? categoryMapper.toDomain(parentEntity) : null;
     }
 
     @Override

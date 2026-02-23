@@ -7,11 +7,16 @@ import org.springframework.stereotype.Component;
 public class CategoryMapper {
 
     public Category toDomain(CategoryJpaEntity entity) {
+        return toDomain(entity, null);
+    }
+
+    public Category toDomain(CategoryJpaEntity entity, Category parent) {
         return Category.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .userId(entity.getUserId())
                 .parentId(entity.getParentId())
+                .parent(parent)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .isDeleted(entity.getIsDeleted())
