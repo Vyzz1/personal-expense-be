@@ -43,7 +43,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     @Override
     public List<Category> findAll() {
         return entityManager
-                .createQuery("SELECT c FROM CategoryJpaEntity c WHERE c.isDeleted IS NOT NULL ", CategoryJpaEntity.class)
+                .createQuery("SELECT c FROM CategoryJpaEntity c WHERE c.isDeleted IS  NULL ", CategoryJpaEntity.class)
                 .getResultList()
                 .stream()
                 .map(categoryMapper::toDomain)
