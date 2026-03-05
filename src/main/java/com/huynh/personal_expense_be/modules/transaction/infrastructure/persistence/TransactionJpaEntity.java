@@ -2,11 +2,10 @@ package com.huynh.personal_expense_be.modules.transaction.infrastructure.persist
 
 import com.huynh.personal_expense_be.modules.category.infrastructure.persistence.CategoryJpaEntity;
 import com.huynh.personal_expense_be.modules.transaction.domain.TransactionType;
+import com.huynh.personal_expense_be.shared.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -15,18 +14,14 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-@Data
+@Data @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "transactions")
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
-public class TransactionJpaEntity {
+@SuperBuilder(toBuilder = true)
+public class TransactionJpaEntity extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
 
 
     @Column(name = "description", columnDefinition = "TEXT")
@@ -45,16 +40,7 @@ public class TransactionJpaEntity {
     @Column(name = "occurred_at", nullable = false)
     private Instant occurredAt;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
 
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
-
-    @Column(name = "is_deleted", nullable = true)
-    private Instant isDeleted;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, columnDefinition = "VARCHAR(255)")
