@@ -10,8 +10,10 @@ import com.huynh.personal_expense_be.modules.transaction.application.port.in.*;
 import com.huynh.personal_expense_be.modules.transaction.application.port.out.TransactionRepositoryPort;
 import com.huynh.personal_expense_be.modules.transaction.domain.Transaction;
 import com.huynh.personal_expense_be.modules.transaction.domain.TransactionType;
+import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionCreatedEvent;
 import com.huynh.personal_expense_be.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
 
     private final CategoryRepositoryPort categoryRepositoryPort;
     private final TransactionRepositoryPort transactionRepositoryPort;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -43,7 +46,17 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
                 .category(category)
                 .build();
 
-        return TransactionResponse.from(transactionRepositoryPort.save(transaction));
+        Transaction saved = transactionRepositoryPort.save(transaction);
+
+        eventPublisher.publishEvent(new TransactionCreatedEvent(
+                saved.getId(),
+                saved.getUserId(),
+                saved.getCategory().getId(),
+                saved.getAmount(),
+                saved.getOccurredAt()
+        ));
+
+        return TransactionResponse.from(saved);
     }
 
     @Override

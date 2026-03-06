@@ -1,7 +1,5 @@
 package com.huynh.personal_expense_be.modules.expense.infrastructure.persistence;
 
-import com.huynh.personal_expense_be.modules.category.infrastructure.persistence.CategoryJpaEntity;
-import com.huynh.personal_expense_be.modules.transaction.infrastructure.persistence.TransactionJpaEntity;
 import com.huynh.personal_expense_be.shared.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -17,8 +15,6 @@ import java.math.BigDecimal;
 @SuperBuilder
 @Entity
 @Table(name = "monthly_expenses",indexes = {
-        @Index(name = "idx_monthly_expenses_transaction_id", columnList = "transaction_id"),
-        @Index(name = "idx_monthly_expenses_category_id", columnList = "category_id")
 },
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_monthly_expenses_user_month_year", columnNames = {"user_id", "month", "year"})
@@ -47,15 +43,6 @@ public class MonthlyExpenseJpaEntity extends BaseEntity {
 
     @Column(name = "change_percentage", columnDefinition = "DECIMAL(5, 2)")
     private BigDecimal changePercentage;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transaction_id", nullable = false)
-    private TransactionJpaEntity transaction;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false)
-    private CategoryJpaEntity category;
-
 
 
 }

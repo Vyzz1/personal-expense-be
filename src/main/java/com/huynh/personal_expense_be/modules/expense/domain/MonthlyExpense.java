@@ -25,24 +25,20 @@ public class MonthlyExpense {
 
     private BigDecimal changePercentage;
 
-    private UUID transactionId;
-
-    private UUID categoryId;
-
     private Instant createdAt;
 
     private Instant updatedAt;
 
     private Instant isDeleted;
 
-    public void updateTotalAmount(BigDecimal newTotalAmount) {
+    public void updateTotalAmount(BigDecimal additionalAmount) {
         BigDecimal previousTotal = this.totalAmount;
-        BigDecimal changePercentage = previousTotal.compareTo(BigDecimal.ZERO) == 0
-                ? BigDecimal.ZERO
-                : newTotalAmount.subtract(previousTotal).divide(previousTotal, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100));
+        BigDecimal newTotal = previousTotal.add(additionalAmount);
 
-        this.totalAmount = newTotalAmount;
-        this.changePercentage = changePercentage;
+        this.totalAmount = newTotal;
+        this.changePercentage = previousTotal.compareTo(BigDecimal.ZERO) == 0
+                ? BigDecimal.ZERO
+                : newTotal.subtract(previousTotal).divide(previousTotal, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100));
     }
 
     public void withPrevious(MonthlyExpense previousExpense) {
