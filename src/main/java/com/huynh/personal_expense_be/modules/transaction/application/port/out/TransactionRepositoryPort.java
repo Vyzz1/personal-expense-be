@@ -1,5 +1,7 @@
 package com.huynh.personal_expense_be.modules.transaction.application.port.out;
 
+import com.huynh.personal_expense_be.modules.transaction.application.dto.GetTransactionCommand;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.PageResult;
 import com.huynh.personal_expense_be.modules.transaction.domain.Transaction;
 
 import java.util.List;
@@ -16,5 +18,6 @@ public interface TransactionRepositoryPort {
 
     void deleteById(UUID id);
 
+    PageResult<Transaction> findAllWithFilter(GetTransactionCommand command);
 
 }

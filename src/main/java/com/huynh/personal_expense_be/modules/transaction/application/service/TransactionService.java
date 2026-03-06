@@ -3,6 +3,8 @@ package com.huynh.personal_expense_be.modules.transaction.application.service;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
 import com.huynh.personal_expense_be.modules.transaction.application.dto.CreateTransactionCommand;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.GetTransactionCommand;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.PageResult;
 import com.huynh.personal_expense_be.modules.transaction.application.dto.TransactionResponse;
 import com.huynh.personal_expense_be.modules.transaction.application.port.in.*;
 import com.huynh.personal_expense_be.modules.transaction.application.port.out.TransactionRepositoryPort;
@@ -42,14 +44,6 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
                 .build();
 
         return TransactionResponse.from(transactionRepositoryPort.save(transaction));
-    }
-
-    @Override
-    public List<TransactionResponse> getListTransaction(String userId) {
-
-        return transactionRepositoryPort.findByUserId(userId).stream()
-                .map(TransactionResponse::from)
-                .toList();
     }
 
     @Override
@@ -106,4 +100,14 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
     }
 
 
+    @Override
+    public PageResult<TransactionResponse> getListTransaction(GetTransactionCommand command) {
+        PageResult<Transaction> page = transactionRepositoryPort.findAllWithFilter(command);
+
+        List<TransactionResponse> content = page.content().stream()
+                .map(TransactionResponse::from)
+                .toList();
+
+        return PageResult.of(content, page.page(), page.size(), page.totalElements(), page.totalPages(), page.last());
+    }
 }

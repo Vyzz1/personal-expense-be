@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public record TransactionRequest(
         @NotBlank String description,
-        @Positive BigDecimal amount,
+        @NotNull @Positive BigDecimal amount,
         @NotNull UUID categoryId,
         Instant occurredAt,
         TransactionType type
