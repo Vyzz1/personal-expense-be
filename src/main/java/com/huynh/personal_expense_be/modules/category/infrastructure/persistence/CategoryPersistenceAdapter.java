@@ -100,7 +100,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     @Override
     public boolean existsById(UUID id) {
         Long count = entityManager
-                .createQuery("SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NOT NULL " , Long.class)
+                .createQuery("SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS  NULL " , Long.class)
                 .setParameter("id", id)
                 .getSingleResult();
         return count > 0;
