@@ -5,7 +5,6 @@ import com.huynh.personal_expense_be.modules.category.application.dto.CreateCate
 import com.huynh.personal_expense_be.modules.category.application.dto.UpdateCategoryCommand;
 import com.huynh.personal_expense_be.modules.category.application.port.in.CreateCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.DeleteCategoryUseCase;
-import com.huynh.personal_expense_be.modules.category.application.port.in.GetCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.UpdateCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
@@ -15,15 +14,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class CategoryService implements
+public class CommandCategoryService implements
         CreateCategoryUseCase,
-        GetCategoryUseCase,
         UpdateCategoryUseCase,
         DeleteCategoryUseCase {
 
@@ -45,20 +42,7 @@ public class CategoryService implements
         return CategoryResponse.from(saved);
     }
 
-    @Override
-    public CategoryResponse getCategoryById(UUID id) {
-        Category category = categoryRepositoryPort.findById(id)
-                .orElseThrow(() -> new NotFoundException("Category not found with id: " + id));
-        return CategoryResponse.from(category);
-    }
 
-    @Override
-    public List<CategoryResponse> getAllCategories() {
-        return categoryRepositoryPort.findAll()
-                .stream()
-                .map(CategoryResponse::from)
-                .toList();
-    }
 
     @Override
     @Transactional

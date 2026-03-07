@@ -1,10 +1,12 @@
 package com.huynh.personal_expense_be.modules.category.presentation;
 
+import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.application.dto.CategoryResponse;
 import com.huynh.personal_expense_be.modules.category.application.dto.CreateCategoryCommand;
 import com.huynh.personal_expense_be.modules.category.application.dto.UpdateCategoryCommand;
 import com.huynh.personal_expense_be.modules.category.application.port.in.CreateCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.DeleteCategoryUseCase;
+import com.huynh.personal_expense_be.modules.category.application.port.in.GetCategoryAnalysisUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.GetCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.UpdateCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.presentation.request.CreateCategoryRequest;
@@ -27,6 +29,7 @@ public class CategoryController {
 
     private final CreateCategoryUseCase createCategoryUseCase;
     private final GetCategoryUseCase getCategoryUseCase;
+    private final GetCategoryAnalysisUseCase getCategoryAnalysisUseCase;
     private final UpdateCategoryUseCase updateCategoryUseCase;
     private final DeleteCategoryUseCase deleteCategoryUseCase;
 
@@ -54,6 +57,13 @@ public class CategoryController {
     public ResponseEntity<BaseResponse<List<CategoryResponse>>> getAll() {
         return ResponseEntity.ok(
                 BaseResponse.success("Categories retrieved successfully", getCategoryUseCase.getAllCategories()));
+    }
+
+    @GetMapping("/analysis")
+    public ResponseEntity<BaseResponse<List<CategoryAnalysisResponse>>> getCategoryAnalysis(Principal principal) {
+        return ResponseEntity.ok(
+                BaseResponse.success("Category analysis retrieved successfully",
+                        getCategoryAnalysisUseCase.getCategoryAnalysis(principal.getName())));
     }
 
     @PutMapping("/{id}")
