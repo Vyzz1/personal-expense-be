@@ -16,4 +16,6 @@ public class GetTransactionRequest {
     private String type;
     private String fromDate;
     private String toDate;
+    private int month;
+    private int year;
 }
