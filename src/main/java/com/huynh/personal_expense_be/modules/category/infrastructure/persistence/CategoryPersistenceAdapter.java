@@ -127,17 +127,17 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
                     c.name,
                     SUM(t.amount)                    AS total,
                     COUNT(t.id)                      AS transaction_count,
-                    EXTRACT(MONTH FROM t.created_at) AS month,
-                    EXTRACT(YEAR  FROM t.created_at) AS year
+                    EXTRACT(MONTH FROM t.occurred_at) AS month,
+                    EXTRACT(YEAR  FROM t.occurred_at) AS year
                 FROM categories c
                 JOIN transactions t ON c.id = t.category_id
                 WHERE t.type = 'EXPENSE'
                   AND t.user_id = :userId
                   AND t.is_deleted IS NULL
-                  AND t.created_at BETWEEN (NOW() - INTERVAL '3 MONTHS') AND NOW()
+                  AND t.occurred_at BETWEEN (NOW() - INTERVAL '3 MONTHS') AND NOW()
                 GROUP BY c.id, c.name,
-                         EXTRACT(MONTH FROM t.created_at),
-                         EXTRACT(YEAR  FROM t.created_at)
+                         EXTRACT(MONTH FROM t.occurred_at),
+                         EXTRACT(YEAR  FROM t.occurred_at)
                 ORDER BY year, month, total DESC
                 """)
                 .setParameter("userId", userId)
