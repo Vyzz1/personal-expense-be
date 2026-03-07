@@ -34,7 +34,7 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
     public MonthlyExpense findByUserIdAndMonth(String userId, int month, int year) {
         log.info("Finding MonthlyExpense for userId: {}, month: {}, year: {}", userId, month, year);
         List<MonthlyExpenseJpaEntity> results = entityManager
-                .createQuery("SELECT m FROM MonthlyExpenseJpaEntity m WHERE m.userId = :userId AND m.month = :month AND m.year = :year", MonthlyExpenseJpaEntity.class)
+                .createQuery("SELECT m FROM MonthlyExpenseJpaEntity m WHERE m.userId = :userId AND m.month = :month AND m.year = :year AND m.isDeleted IS NULL ", MonthlyExpenseJpaEntity.class)
                 .setParameter("userId", userId)
                 .setParameter("month", month)
                 .setParameter("year", year)
@@ -46,5 +46,43 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
         if (entity == null) return null;
 
         return monthlyExpenseMapper.toDomain(entity);
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<MonthlyExpense> findThreeMonthCompare(String userId, int month, int year) {
+        // Build list of (month, year) for current and 2 preceding months
+        List<Integer> months = new java.util.ArrayList<>();
+        List<Integer> years = new java.util.ArrayList<>();
+        int m = month, y = year;
+        for (int i = 0; i < 3; i++) {
+            months.add(m);
+            years.add(y);
+            m--;
+            if (m == 0) {
+                m = 12;
+                y--;
+            }
+        }
+
+        List<MonthlyExpenseJpaEntity> results = entityManager
+                .createQuery(
+                        "SELECT me FROM MonthlyExpenseJpaEntity me " +
+                        "WHERE me.userId = :userId " +
+                        "AND me.isDeleted IS NULL " +
+                        "AND ((me.month = :m0 AND me.year = :y0) " +
+                        "  OR (me.month = :m1 AND me.year = :y1) " +
+                        "  OR (me.month = :m2 AND me.year = :y2)) " +
+                        "ORDER BY me.year DESC, me.month DESC",
+                        MonthlyExpenseJpaEntity.class)
+                .setParameter("userId", userId)
+                .setParameter("m0", months.get(0)).setParameter("y0", years.get(0))
+                .setParameter("m1", months.get(1)).setParameter("y1", years.get(1))
+                .setParameter("m2", months.get(2)).setParameter("y2", years.get(2))
+                .getResultList();
+
+        return results.stream()
+                .map(monthlyExpenseMapper::toDomain)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

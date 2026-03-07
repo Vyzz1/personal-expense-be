@@ -58,4 +58,14 @@ public class MonthlyExpense {
         }
     }
 
+    public void deductAmount(BigDecimal deductAmount) {
+        BigDecimal previousTotal = this.totalAmount;
+        BigDecimal newTotal = previousTotal.subtract(deductAmount);
+
+        this.totalAmount = newTotal;
+        this.changePercentage = previousTotal.compareTo(BigDecimal.ZERO) == 0
+                ? BigDecimal.ZERO
+                : newTotal.subtract(previousTotal).divide(previousTotal, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100));
+    }
+
 }

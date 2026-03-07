@@ -11,6 +11,8 @@ import com.huynh.personal_expense_be.modules.transaction.application.port.out.Tr
 import com.huynh.personal_expense_be.modules.transaction.domain.Transaction;
 import com.huynh.personal_expense_be.modules.transaction.domain.TransactionType;
 import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionCreatedEvent;
+import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionDeletedEvent;
+import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionUpdatedEvent;
 import com.huynh.personal_expense_be.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -86,6 +88,12 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
             throw new NotFoundException("Transaction not found with id: " + transactionId);
         }
         transactionRepositoryPort.deleteById(transactionId);
+
+        eventPublisher.publishEvent(new TransactionDeletedEvent(
+                transaction.getUserId(),
+                transaction.getAmount(),
+                transaction.getOccurredAt()
+        ));
     }
 
     @Override
@@ -101,6 +109,8 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
         Category category =  categoryRepositoryPort.findById(command.categoryId())
                 .orElseThrow(() -> new NotFoundException("Category not found with id: " + command.categoryId()));
 
+        java.math.BigDecimal oldAmount = transaction.getAmount();
+
         Transaction updated = transaction.toBuilder()
                 .amount(command.amount())
                 .description(command.description())
@@ -109,7 +119,16 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
                 .category(category)
                 .build();
 
-        return TransactionResponse.from(transactionRepositoryPort.save(updated));
+        Transaction saved = transactionRepositoryPort.save(updated);
+
+        eventPublisher.publishEvent(new TransactionUpdatedEvent(
+                saved.getUserId(),
+                oldAmount,
+                saved.getAmount(),
+                saved.getOccurredAt()
+        ));
+
+        return TransactionResponse.from(saved);
     }
 
 
