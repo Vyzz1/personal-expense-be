@@ -32,7 +32,7 @@ public class CategoryService implements
     @Override
     @Transactional
     public CategoryResponse createCategory(CreateCategoryCommand command) {
-        if (categoryRepositoryPort.existsByNameAndUserId(command.name(), command.userId())) {
+        if (categoryRepositoryPort.existsByNameAndUserId(command.name(), command.userId()).isPresent()) {
             throw new DuplicateException("Category '" + command.name() + "' already exists for this user");
         }
         Category category = Category.builder()

@@ -18,5 +18,5 @@ public interface CategoryRepositoryPort {
 
     boolean existsById(UUID id);
 
-    boolean existsByNameAndUserId(String name, String userId);
+    Optional<Category> existsByNameAndUserId(String name, String userId);
 }
