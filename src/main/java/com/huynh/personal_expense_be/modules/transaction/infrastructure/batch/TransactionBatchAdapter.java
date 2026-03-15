@@ -1,36 +1,72 @@
 package com.huynh.personal_expense_be.modules.transaction.infrastructure.batch;
 
 import com.huynh.personal_expense_be.modules.transaction.application.port.out.TransactionBatchPort;
+import com.huynh.personal_expense_be.modules.transaction.domain.batch.BatchJob;
+import com.huynh.personal_expense_be.shared.exception.NotFoundException;
+
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.batch.core.job.Job;
+import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.job.parameters.JobParameters;
 import org.springframework.batch.core.job.parameters.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobOperator;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class TransactionBatchAdapter implements TransactionBatchPort {
 
     private final JobOperator jobOperator;
     private final Job importJob;
+    private final JobRepository jobRepository;
 
-    public TransactionBatchAdapter(@Qualifier("asyncJobOperator") JobOperator jobOperator, Job importJob) {
+    public TransactionBatchAdapter(@Qualifier("asyncJobOperator") JobOperator jobOperator, Job importJob,
+            JobRepository jobRepository) {
         this.jobOperator = jobOperator;
         this.importJob = importJob;
+        this.jobRepository = jobRepository;
+
     }
 
     @Override
-    public void executeBatchImport(String userId, String filePath) {
+    public BatchJob executeBatchImport(String userId, String filePath) {
         try {
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("userId", userId)
                     .addString("filePath", filePath)
                     .toJobParameters();
-            jobOperator.start(importJob,jobParameters);
+            JobExecution jobExecution = jobOperator.start(importJob, jobParameters);
+
+            BatchJob response = BatchJob.builder()
+                    .batchId(String.valueOf(jobExecution.getId()))
+                    .status(jobExecution.getStatus().toString())
+                    .build();
+
+            return response;
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
-}
 
+    @Override
+    public BatchJob getBatchImportStatus(String batchId) {
+
+        JobExecution jobExecution = jobRepository.getJobExecution(Long.parseLong(batchId));
+
+        if (jobExecution == null) {
+            throw new NotFoundException("Batch job not found");
+        }
+
+        BatchJob response = BatchJob.builder()
+                .batchId(batchId)
+                .status(jobExecution.getStatus().toString())
+                .build();
+
+        return response;
+
+    }
+}

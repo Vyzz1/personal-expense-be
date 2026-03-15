@@ -20,4 +20,6 @@ public interface CategoryRepositoryPort {
     boolean existsById(UUID id);
 
     Optional<Category> existsByNameAndUserId(String name, String userId);
+
+    List<CategoryAnalysisResponse> getCategoryAnalysis(String userId);
 }

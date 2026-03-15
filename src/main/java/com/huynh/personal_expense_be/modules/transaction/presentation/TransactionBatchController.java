@@ -1,9 +1,12 @@
 package com.huynh.personal_expense_be.modules.transaction.presentation;
 
 import com.huynh.personal_expense_be.modules.transaction.application.dto.ImportTransactionCommand;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.TransactionBatchResponse;
+import com.huynh.personal_expense_be.modules.transaction.application.port.in.GetTransactionBatchUseCase;
 import com.huynh.personal_expense_be.modules.transaction.application.port.in.ImportTransactionUseCase;
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,26 +20,39 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 @RequestMapping("/api/v1/transactions/batch")
 @RequiredArgsConstructor
 public class TransactionBatchController {
 
-    private final ImportTransactionUseCase importTransactionUseCase;
-    private final String UPLOAD_DIR = System.getProperty("java.io.tmpdir");
+        private final ImportTransactionUseCase importTransactionUseCase;
+        private final GetTransactionBatchUseCase getTransactionBatchUseCase;
+        private final String UPLOAD_DIR = System.getProperty("java.io.tmpdir");
 
+        @PostMapping
+        public ResponseEntity<BaseResponse<TransactionBatchResponse>> importTransactions(
+                        @RequestParam("file") MultipartFile file,
+                        Principal principal) throws IOException {
+                String userId = principal.getName();
+                String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+                Path filePath = Paths.get(UPLOAD_DIR, fileName);
+                Files.copy(file.getInputStream(), filePath);
 
-    @PostMapping
-    public ResponseEntity<BaseResponse<?>> importTransactions(@RequestParam("file")MultipartFile file, Principal principal) throws IOException {
-        String userId = principal.getName();
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path filePath = Paths.get(UPLOAD_DIR, fileName);
-        Files.copy(file.getInputStream(), filePath);
+                TransactionBatchResponse response = importTransactionUseCase
+                                .importTransactions(new ImportTransactionCommand(userId, filePath.toString()));
 
-        importTransactionUseCase.importTransactions(new ImportTransactionCommand(userId, filePath.toString()));
+                return ResponseEntity.accepted()
+                                .body(BaseResponse.success("Batch import started", response));
+        }
 
-        return ResponseEntity.accepted().body(BaseResponse.noData("File uploaded successfully. Import process started."));
-    }
+        @GetMapping("/{id}")
+        public ResponseEntity<BaseResponse<TransactionBatchResponse>> getBatchImportStatus(
+                        @PathVariable("id") String id) {
+                TransactionBatchResponse response = getTransactionBatchUseCase.getBatchImportStatus(id);
+                return ResponseEntity.ok(BaseResponse.success("Batch import status retrieved", response));
+        }
 
 }
