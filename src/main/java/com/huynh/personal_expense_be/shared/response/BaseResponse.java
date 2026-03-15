@@ -18,4 +18,8 @@ public class BaseResponse <T> {
         return new BaseResponse<>(message, true, data);
     }
 
+    public static <T> BaseResponse<T> noData(String message) {
+        return new BaseResponse<>(message, true, null);
+    }
+
 }

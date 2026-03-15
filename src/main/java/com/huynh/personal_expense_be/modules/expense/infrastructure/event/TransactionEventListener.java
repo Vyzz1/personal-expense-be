@@ -6,6 +6,7 @@ import com.huynh.personal_expense_be.modules.expense.application.dto.UpdateExpen
 import com.huynh.personal_expense_be.modules.expense.application.port.in.DeductMonthlyExpenseUseCase;
 import com.huynh.personal_expense_be.modules.expense.application.port.in.RecordMonthlyExpenseUseCase;
 import com.huynh.personal_expense_be.modules.expense.application.port.in.UpdateMonthlyExpenseUseCase;
+import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionChunkCreatedEvent;
 import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionCreatedEvent;
 import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionDeletedEvent;
 import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionUpdatedEvent;
@@ -13,14 +14,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class TransactionCreatedEventListener {
+public class TransactionEventListener {
 
     private final RecordMonthlyExpenseUseCase recordMonthlyExpenseUseCase;
     private final DeductMonthlyExpenseUseCase deductMonthlyExpenseUseCase;
@@ -35,6 +37,19 @@ public class TransactionCreatedEventListener {
         recordMonthlyExpenseUseCase.recordMonthlyExpense(
                 new RecordExpenseCommand(event.userId(), event.amount(), event.occurredAt())
         );
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
+    public void handleListTransactionCreated(TransactionChunkCreatedEvent chunkEvent) {
+
+        log.info("Handling batch of TransactionCreatedEvents for {} transactions", chunkEvent.events().size());
+
+        List<RecordExpenseCommand> commands = chunkEvent.events().stream()
+                .map(event -> new RecordExpenseCommand(event.userId(), event.amount(), event.occurredAt()))
+                .toList();
+
+        recordMonthlyExpenseUseCase.recordMonthlyExpenses(commands);
     }
 
     @Async

@@ -107,15 +107,18 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     }
 
     @Override
-    public boolean existsByNameAndUserId(String name, String userId) {
-        Long count = entityManager
+    public  Optional<Category> existsByNameAndUserId(String name, String userId) {
+        CategoryJpaEntity category = entityManager
                 .createQuery(
-                        "SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.name = :name AND c.userId = :userId AND c.isDeleted IS NULL",
-                        Long.class)
+                        "SELECT c FROM CategoryJpaEntity c WHERE c.name = :name AND c.userId = :userId AND c.isDeleted IS NULL",
+                        CategoryJpaEntity.class)
                 .setParameter("name", name)
                 .setParameter("userId", userId)
-                .getSingleResult();
-        return count > 0;
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+
+        return category != null ? Optional.of(categoryMapper.toDomain(category)) : Optional.empty();
     }
 
     @Override
