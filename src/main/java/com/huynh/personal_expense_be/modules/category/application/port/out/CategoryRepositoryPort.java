@@ -1,5 +1,6 @@
 package com.huynh.personal_expense_be.modules.category.application.port.out;
 
+import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
 
 import java.util.List;

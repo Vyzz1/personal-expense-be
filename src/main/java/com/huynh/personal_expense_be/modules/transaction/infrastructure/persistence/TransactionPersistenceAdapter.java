@@ -118,6 +118,12 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
             dataQuery.setParameter("toDate", Instant.parse(command.toDate()));
             countQuery.setParameter("toDate", Instant.parse(command.toDate()));
         }
+        if(command.month() > 0 && command.year() > 0) {
+            dataQuery.setParameter("month", command.month());
+            dataQuery.setParameter("year", command.year());
+            countQuery.setParameter("month", command.month());
+            countQuery.setParameter("year", command.year());
+        }
 
         int page = command.page();
         int size = command.size() > 0 ? command.size() : 10;
@@ -153,6 +159,11 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
         if (command.toDate() != null && !command.toDate().isBlank()) {
             where.append(" AND t.occurredAt <= :toDate");
         }
+
+        if(command.month() > 0 && command.year() > 0) {
+            where.append(" AND MONTH(t.occurredAt) = :month AND YEAR(t.occurredAt) = :year");
+        }
+
         return where;
     }
 

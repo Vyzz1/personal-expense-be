@@ -1,5 +1,6 @@
 package com.huynh.personal_expense_be.modules.category.infrastructure.persistence;
 
+import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
 import jakarta.persistence.EntityManager;
@@ -7,6 +8,7 @@ import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -117,5 +119,42 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
                 .orElse(null);
 
         return category != null ? Optional.of(categoryMapper.toDomain(category)) : Optional.empty();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<CategoryAnalysisResponse> getCategoryAnalysis(String userId) {
+        List<Object[]> rows = entityManager.createNativeQuery("""
+                SELECT
+                    c.id::text,
+                    c.name,
+                    SUM(t.amount)                    AS total,
+                    COUNT(t.id)                      AS transaction_count,
+                    EXTRACT(MONTH FROM t.occurred_at) AS month,
+                    EXTRACT(YEAR  FROM t.occurred_at) AS year
+                FROM categories c
+                JOIN transactions t ON c.id = t.category_id
+                WHERE t.type = 'EXPENSE'
+                  AND t.user_id = :userId
+                  AND t.is_deleted IS NULL
+                  AND t.occurred_at BETWEEN (NOW() - INTERVAL '3 MONTHS') AND NOW()
+                GROUP BY c.id, c.name,
+                         EXTRACT(MONTH FROM t.occurred_at),
+                         EXTRACT(YEAR  FROM t.occurred_at)
+                ORDER BY year, month, total DESC
+                """)
+                .setParameter("userId", userId)
+                .getResultList();
+
+        return rows.stream()
+                .map(row -> new CategoryAnalysisResponse(
+                        ((Number) row[4]).intValue(),
+                        ((Number) row[5]).intValue(),
+                        (BigDecimal) row[2],
+                        ((Number) row[3]).intValue(),
+                        UUID.fromString(row[0].toString()),
+                        (String) row[1]
+                ))
+                .toList();
     }
 }

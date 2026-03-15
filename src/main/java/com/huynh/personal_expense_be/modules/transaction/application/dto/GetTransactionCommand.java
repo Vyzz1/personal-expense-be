@@ -13,6 +13,8 @@ public record GetTransactionCommand(
         List<UUID> categoryIds,
         String type,
         String fromDate,
-        String toDate
+        String toDate,
+        int month,
+        int year
 ) {
 }

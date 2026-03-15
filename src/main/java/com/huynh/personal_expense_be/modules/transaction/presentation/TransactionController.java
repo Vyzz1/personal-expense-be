@@ -57,7 +57,9 @@ public class TransactionController {
                 new GetTransactionCommand(request.getPage(), request.getSize(), request.getSortBy(),
                         request.getSortOrder(), userId, request.getDescription(),
                         request.getCategoryIds(), request.getType(),
-                        request.getFromDate(), request.getToDate())
+                        request.getFromDate(), request.getToDate(),
+                        request.getMonth(), request.getYear()
+                        )
         );
         PaginationResponse<TransactionResponse> response = PaginationResponse.of(
                 result.content(), result.page(), result.size(), result.totalElements(), result.totalPages(), result.last()

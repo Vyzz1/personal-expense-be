@@ -1,26 +1,24 @@
 package com.huynh.personal_expense_be.modules.category.infrastructure.persistence;
 
+import com.huynh.personal_expense_be.shared.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.experimental.SuperBuilder;
 
-import java.time.Instant;
 import java.util.UUID;
 
-@Data
+@SuperBuilder(toBuilder = true)
 @Entity
 @Table(name = "categories")
 @NoArgsConstructor @AllArgsConstructor
-@EntityListeners(AuditingEntityListener.class)
-public class CategoryJpaEntity {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class CategoryJpaEntity extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+
 
     @Column(nullable = false,name = "name",columnDefinition = "VARCHAR(255)")
     private String name;
@@ -31,14 +29,5 @@ public class CategoryJpaEntity {
     @Column(name = "parent_id", columnDefinition = "UUID")
     private UUID parentId;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
 
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
-
-    @Column(name = "is_deleted", nullable = true)
-    private Instant isDeleted;
 }

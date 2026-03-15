@@ -37,15 +37,15 @@ public class TransactionMapper {
     }
 
     public  CategoryJpaEntity toCategoryJpaEntity(Category domain) {
-        return new CategoryJpaEntity(
-                domain.getId(),
-                domain.getName(),
-                domain.getUserId(),
-                domain.getParentId(),
-                domain.getCreatedAt(),
-                domain.getUpdatedAt(),
-                domain.getIsDeleted()
-        );
+        return CategoryJpaEntity.builder()
+                .id(domain.getId())
+                .name(domain.getName())
+                .userId(domain.getUserId())
+                .parentId(domain.getParentId())
+                .createdAt(domain.getCreatedAt())
+                .updatedAt(domain.getUpdatedAt())
+                .isDeleted(domain.getIsDeleted())
+                .build();
     }
 
     public  TransactionJpaEntity toJpaEntity(Transaction domain) {
