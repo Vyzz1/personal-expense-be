@@ -149,10 +149,10 @@ public class GlobalExceptionHandler {
         int count = fieldErrors.size();
         String message = "Validation failed for %d field%s".formatted(count, count == 1 ? "" : "s");
 
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT)
                 .body(ValidationExceptionResponse.of(
-                        HttpStatus.UNPROCESSABLE_ENTITY.value(),
-                        HttpStatus.UNPROCESSABLE_ENTITY.getReasonPhrase(),
+                        HttpStatus.UNPROCESSABLE_CONTENT.value(),
+                        HttpStatus.UNPROCESSABLE_CONTENT.getReasonPhrase(),
                         message,
                         path,
                         fieldErrors
