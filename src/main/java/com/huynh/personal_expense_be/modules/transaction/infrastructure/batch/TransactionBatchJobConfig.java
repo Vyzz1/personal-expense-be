@@ -4,7 +4,6 @@ import com.huynh.personal_expense_be.modules.transaction.application.dto.Transac
 import com.huynh.personal_expense_be.modules.transaction.infrastructure.persistence.TransactionJpaEntity;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
-import org.springframework.batch.core.job.parameters.RunIdIncrementer;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -92,7 +91,6 @@ public class TransactionBatchJobConfig {
         @Bean
         public Job importJob(Step validationStep, Step summaryStep) {
                 return new JobBuilder("import-job", jobRepository)
-                                .incrementer(new RunIdIncrementer())
                                 .start(validationStep)
                                 .next(summaryStep)
                                 .build();

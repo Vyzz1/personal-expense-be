@@ -34,18 +34,19 @@ public class TransactionBatchAdapter implements TransactionBatchPort {
     @Override
     public BatchJob executeBatchImport(String userId, String filePath) {
         try {
+            log.info("Starting transaction batch import. userId={}, filePath={}", userId, filePath);
+
             JobParameters jobParameters = new JobParametersBuilder()
                     .addString("userId", userId)
+                    .addLong("time", System.currentTimeMillis())
                     .addString("filePath", filePath)
                     .toJobParameters();
             JobExecution jobExecution = jobOperator.start(importJob, jobParameters);
 
-            BatchJob response = BatchJob.builder()
+            return BatchJob.builder()
                     .batchId(String.valueOf(jobExecution.getId()))
                     .status(jobExecution.getStatus().toString())
                     .build();
-
-            return response;
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -61,12 +62,10 @@ public class TransactionBatchAdapter implements TransactionBatchPort {
             throw new NotFoundException("Batch job not found");
         }
 
-        BatchJob response = BatchJob.builder()
+        return BatchJob.builder()
                 .batchId(batchId)
                 .status(jobExecution.getStatus().toString())
                 .build();
-
-        return response;
 
     }
 }

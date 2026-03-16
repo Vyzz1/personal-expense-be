@@ -7,6 +7,7 @@ import com.huynh.personal_expense_be.modules.transaction.application.port.in.Imp
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.Principal;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RestController
 @RequestMapping("/api/v1/transactions/batch")
 @RequiredArgsConstructor
+@Slf4j
 public class TransactionBatchController {
 
         private final ImportTransactionUseCase importTransactionUseCase;
@@ -39,7 +42,13 @@ public class TransactionBatchController {
                 String userId = principal.getName();
                 String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
                 Path filePath = Paths.get(UPLOAD_DIR, fileName);
-                Files.copy(file.getInputStream(), filePath);
+
+                Files.createDirectories(filePath.getParent());
+                Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                long storedSize = Files.size(filePath);
+                log.info("Stored batch import file. userId={}, originalName={}, storedPath={}, bytes={}",
+                                                userId, file.getOriginalFilename(), filePath, storedSize);
 
                 TransactionBatchResponse response = importTransactionUseCase
                                 .importTransactions(new ImportTransactionCommand(userId, filePath.toString()));
