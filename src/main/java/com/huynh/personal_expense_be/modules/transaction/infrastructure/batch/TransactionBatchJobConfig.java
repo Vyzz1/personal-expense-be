@@ -29,63 +29,72 @@ import org.springframework.transaction.PlatformTransactionManager;
 @RequiredArgsConstructor
 public class TransactionBatchJobConfig {
 
-    private final EntityManagerFactory entityManagerFactory;
-    private final JobRepository jobRepository;
-    private final PlatformTransactionManager transactionManager;
-    private final TransactionValidationProcessor transactionValidationProcessor;
-    private final TransactionChunkListener transactionChunkListener;
+        private final EntityManagerFactory entityManagerFactory;
+        private final JobRepository jobRepository;
+        private final PlatformTransactionManager transactionManager;
+        private final TransactionValidationProcessor transactionValidationProcessor;
+        private final TransactionChunkListener transactionChunkListener;
+        private final JobSummaryTasklet jobSummaryTasklet;
 
-    @Bean
-    @StepScope
-    public FlatFileItemReader<TransactionCsv> csvTransactionReader(
-            @Value("#{jobParameters['filePath']}") String filePath,
-            @Value("#{jobParameters['userId']}") String userId) {
+        @Bean
+        @StepScope
+        public FlatFileItemReader<TransactionCsv> csvTransactionReader(
+                        @Value("#{jobParameters['filePath']}") String filePath,
+                        @Value("#{jobParameters['userId']}") String userId) {
 
-        log.info("Creating FlatFileItemReader with file path: {}", filePath);
-        return new FlatFileItemReaderBuilder<TransactionCsv>()
-                .name("transactionItemReader")
-                .resource(new FileSystemResource(filePath))
-                .linesToSkip(1) // Skip header line
-                .delimited()
-                .delimiter(",")
-                .names("amount", "description", "date", "type", "category")
-                .fieldSetMapper(fieldSet -> new TransactionCsv(
-                        fieldSet.readBigDecimal("amount"),
-                        fieldSet.readString("description"),
-                        fieldSet.readString("date"),
-                        fieldSet.readString("type"),
-                        fieldSet.readString("category"), userId))
-                .build();
-    }
+                log.info("Creating FlatFileItemReader with file path: {}", filePath);
+                return new FlatFileItemReaderBuilder<TransactionCsv>()
+                                .name("transactionItemReader")
+                                .resource(new FileSystemResource(filePath))
+                                .linesToSkip(1) // Skip header line
+                                .delimited()
+                                .delimiter(",")
+                                .names("amount", "description", "date", "type", "category")
+                                .fieldSetMapper(fieldSet -> new TransactionCsv(
+                                                fieldSet.readBigDecimal("amount"),
+                                                fieldSet.readString("description"),
+                                                fieldSet.readString("date"),
+                                                fieldSet.readString("type"),
+                                                fieldSet.readString("category"), userId))
+                                .build();
+        }
 
-    @Bean
-    public JpaItemWriter<TransactionJpaEntity> writer() {
-        return new JpaItemWriterBuilder<TransactionJpaEntity>()
-                .entityManagerFactory(entityManagerFactory)
-                .build();
-    }
+        @Bean
+        public JpaItemWriter<TransactionJpaEntity> writer() {
+                return new JpaItemWriterBuilder<TransactionJpaEntity>()
+                                .entityManagerFactory(entityManagerFactory)
+                                .build();
+        }
 
-    @Bean
-    public Step validationStep(FlatFileItemReader<TransactionCsv> csvTransactionReader) {
-        return new StepBuilder("validation-step", jobRepository)
-                .<TransactionCsv, TransactionJpaEntity>chunk(10)
-                .transactionManager(transactionManager)
-                .reader(csvTransactionReader)
-                .processor(transactionValidationProcessor)
-                .writer(writer())
-                .faultTolerant()
-                .listener(transactionChunkListener)
-                .skip(IllegalArgumentException.class) // Skip invalid records
-                .skipLimit(10)
-                .skip(DataIntegrityViolationException.class)// Allow unlimited skips
-                .build();
-    }
+        @Bean
+        public Step validationStep(FlatFileItemReader<TransactionCsv> csvTransactionReader) {
+                return new StepBuilder("validation-step", jobRepository)
+                                .<TransactionCsv, TransactionJpaEntity>chunk(10)
+                                .transactionManager(transactionManager)
+                                .reader(csvTransactionReader)
+                                .processor(transactionValidationProcessor)
+                                .writer(writer())
+                                .faultTolerant()
+                                .listener(transactionChunkListener)
+                                .skip(IllegalArgumentException.class) // Skip invalid records
+                                .skipLimit(10)
+                                .skip(DataIntegrityViolationException.class)// Allow unlimited skips
+                                .build();
+        }
 
-    @Bean
-    public Job importJob(Step validationStep, Step importStep) {
-        return new JobBuilder("import-job", jobRepository)
-                .incrementer(new RunIdIncrementer())
-                .start(validationStep)
-                .build();
-    }
+        @Bean
+        public Step summaryStep() {
+                return new StepBuilder("summary-step", jobRepository)
+                                .tasklet(jobSummaryTasklet, transactionManager)
+                                .build();
+        }
+
+        @Bean
+        public Job importJob(Step validationStep, Step summaryStep) {
+                return new JobBuilder("import-job", jobRepository)
+                                .incrementer(new RunIdIncrementer())
+                                .start(validationStep)
+                                .next(summaryStep)
+                                .build();
+        }
 }
