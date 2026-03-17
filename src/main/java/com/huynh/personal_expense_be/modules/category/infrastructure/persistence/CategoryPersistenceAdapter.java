@@ -1,8 +1,8 @@
 package com.huynh.personal_expense_be.modules.category.infrastructure.persistence;
 
-import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
+import com.huynh.personal_expense_be.modules.category.domain.CategoryAnalysis;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -100,7 +100,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     @Override
     public boolean existsById(UUID id) {
         Long count = entityManager
-                .createQuery("SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NOT NULL " , Long.class)
+                .createQuery("SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS  NULL " , Long.class)
                 .setParameter("id", id)
                 .getSingleResult();
         return count > 0;
@@ -123,7 +123,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<CategoryAnalysisResponse> getCategoryAnalysis(String userId) {
+    public List<CategoryAnalysis> getCategoryAnalysis(String userId) {
         List<Object[]> rows = entityManager.createNativeQuery("""
                 SELECT
                     c.id::text,
@@ -147,13 +147,13 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
                 .getResultList();
 
         return rows.stream()
-                .map(row -> new CategoryAnalysisResponse(
+                .map(row -> new CategoryAnalysis(
+                        UUID.fromString(row[0].toString()),
                         ((Number) row[4]).intValue(),
                         ((Number) row[5]).intValue(),
+                        (String) row[1],
                         (BigDecimal) row[2],
-                        ((Number) row[3]).intValue(),
-                        UUID.fromString(row[0].toString()),
-                        (String) row[1]
+                        (Long) row[3]
                 ))
                 .toList();
     }
