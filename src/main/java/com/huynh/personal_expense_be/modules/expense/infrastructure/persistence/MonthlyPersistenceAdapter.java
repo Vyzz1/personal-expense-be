@@ -30,7 +30,7 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
             VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT (user_id, month, year)
             DO UPDATE SET
-                total_amount = EXCLUDED.total_amount,
+                total_amount = monthly_expenses.total_amount + EXCLUDED.total_amount,
                 previous_total_amount = EXCLUDED.previous_total_amount,
                 change_percentage = EXCLUDED.change_percentage
             """;

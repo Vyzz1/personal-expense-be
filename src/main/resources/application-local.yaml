@@ -12,6 +12,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 500
     database: postgresql
 
   datasource:
