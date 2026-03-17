@@ -3,13 +3,19 @@ package com.huynh.personal_expense_be.modules.transaction.application.service;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
 import com.huynh.personal_expense_be.modules.transaction.application.dto.CreateTransactionCommand;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.GetTransactionCommand;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.PageResult;
 import com.huynh.personal_expense_be.modules.transaction.application.dto.TransactionResponse;
 import com.huynh.personal_expense_be.modules.transaction.application.port.in.*;
 import com.huynh.personal_expense_be.modules.transaction.application.port.out.TransactionRepositoryPort;
 import com.huynh.personal_expense_be.modules.transaction.domain.Transaction;
 import com.huynh.personal_expense_be.modules.transaction.domain.TransactionType;
+import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionCreatedEvent;
+import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionDeletedEvent;
+import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionUpdatedEvent;
 import com.huynh.personal_expense_be.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +29,7 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
 
     private final CategoryRepositoryPort categoryRepositoryPort;
     private final TransactionRepositoryPort transactionRepositoryPort;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -41,15 +48,17 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
                 .category(category)
                 .build();
 
-        return TransactionResponse.from(transactionRepositoryPort.save(transaction));
-    }
+        Transaction saved = transactionRepositoryPort.save(transaction);
 
-    @Override
-    public List<TransactionResponse> getListTransaction(String userId) {
+        eventPublisher.publishEvent(new TransactionCreatedEvent(
+                saved.getId(),
+                saved.getUserId(),
+                saved.getCategory().getId(),
+                saved.getAmount(),
+                saved.getOccurredAt()
+        ));
 
-        return transactionRepositoryPort.findByUserId(userId).stream()
-                .map(TransactionResponse::from)
-                .toList();
+        return TransactionResponse.from(saved);
     }
 
     @Override
@@ -79,6 +88,12 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
             throw new NotFoundException("Transaction not found with id: " + transactionId);
         }
         transactionRepositoryPort.deleteById(transactionId);
+
+        eventPublisher.publishEvent(new TransactionDeletedEvent(
+                transaction.getUserId(),
+                transaction.getAmount(),
+                transaction.getOccurredAt()
+        ));
     }
 
     @Override
@@ -94,6 +109,8 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
         Category category =  categoryRepositoryPort.findById(command.categoryId())
                 .orElseThrow(() -> new NotFoundException("Category not found with id: " + command.categoryId()));
 
+        java.math.BigDecimal oldAmount = transaction.getAmount();
+
         Transaction updated = transaction.toBuilder()
                 .amount(command.amount())
                 .description(command.description())
@@ -102,8 +119,27 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
                 .category(category)
                 .build();
 
-        return TransactionResponse.from(transactionRepositoryPort.save(updated));
+        Transaction saved = transactionRepositoryPort.save(updated);
+
+        eventPublisher.publishEvent(new TransactionUpdatedEvent(
+                saved.getUserId(),
+                oldAmount,
+                saved.getAmount(),
+                saved.getOccurredAt()
+        ));
+
+        return TransactionResponse.from(saved);
     }
 
 
+    @Override
+    public PageResult<TransactionResponse> getListTransaction(GetTransactionCommand command) {
+        PageResult<Transaction> page = transactionRepositoryPort.findAllWithFilter(command);
+
+        List<TransactionResponse> content = page.content().stream()
+                .map(TransactionResponse::from)
+                .toList();
+
+        return PageResult.of(content, page.page(), page.size(), page.totalElements(), page.totalPages(), page.last());
+    }
 }

@@ -2,40 +2,30 @@ package com.huynh.personal_expense_be.modules.transaction.infrastructure.persist
 
 import com.huynh.personal_expense_be.modules.category.infrastructure.persistence.CategoryJpaEntity;
 import com.huynh.personal_expense_be.modules.transaction.domain.TransactionType;
+import com.huynh.personal_expense_be.shared.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.UUID;
 
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "transactions")
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@EntityListeners(AuditingEntityListener.class)
-public class TransactionJpaEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
+@SuperBuilder(toBuilder = true)
+public class TransactionJpaEntity extends BaseEntity {
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false,name = "amount", columnDefinition = "DECIMAL(19, 4)")
+    @Column(nullable = false, name = "amount", columnDefinition = "DECIMAL(19, 4)")
     private BigDecimal amount;
 
-    @Column(nullable = false,name = "user_id", columnDefinition = "VARCHAR(255)")
+    @Column(nullable = false, name = "user_id", columnDefinition = "VARCHAR(255)")
     private String userId;
 
     @ManyToOne
@@ -45,20 +35,8 @@ public class TransactionJpaEntity {
     @Column(name = "occurred_at", nullable = false)
     private Instant occurredAt;
 
-    @CreatedDate
-    @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
-
-    @Column(name = "is_deleted", nullable = true)
-    private Instant isDeleted;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, columnDefinition = "VARCHAR(255)")
     private TransactionType type;
-
 
 }

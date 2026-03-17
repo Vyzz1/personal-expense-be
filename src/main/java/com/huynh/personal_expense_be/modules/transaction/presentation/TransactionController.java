@@ -1,20 +1,21 @@
 package com.huynh.personal_expense_be.modules.transaction.presentation;
 
 import com.huynh.personal_expense_be.modules.transaction.application.dto.CreateTransactionCommand;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.GetTransactionCommand;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.PageResult;
 import com.huynh.personal_expense_be.modules.transaction.application.dto.TransactionResponse;
 import com.huynh.personal_expense_be.modules.transaction.application.port.in.*;
+import com.huynh.personal_expense_be.modules.transaction.presentation.request.GetTransactionRequest;
 import com.huynh.personal_expense_be.modules.transaction.presentation.request.TransactionRequest;
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
+import com.huynh.personal_expense_be.shared.response.PaginationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.List;
 import java.util.UUID;
-
-import org.springframework.web.bind.annotation.GetMapping;
 
 
 @RestController
@@ -47,13 +48,23 @@ public class TransactionController {
     }
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<TransactionResponse>>> getAllTransactions(Principal principal) {
+    public ResponseEntity<BaseResponse<PaginationResponse<TransactionResponse>>> getAllTransactions(
+            @ModelAttribute GetTransactionRequest request,
+            Principal principal) {
 
         String userId = principal.getName();
-
-        List<TransactionResponse> transactions = getListTransactionUseCase.getListTransaction(userId);
-
-        return ResponseEntity.ok(BaseResponse.success("Transactions retrieved successfully !", transactions));
+        PageResult<TransactionResponse> result = getListTransactionUseCase.getListTransaction(
+                new GetTransactionCommand(request.getPage(), request.getSize(), request.getSortBy(),
+                        request.getSortOrder(), userId, request.getDescription(),
+                        request.getCategoryIds(), request.getType(),
+                        request.getFromDate(), request.getToDate(),
+                        request.getMonth(), request.getYear()
+                        )
+        );
+        PaginationResponse<TransactionResponse> response = PaginationResponse.of(
+                result.content(), result.page(), result.size(), result.totalElements(), result.totalPages(), result.last()
+        );
+        return ResponseEntity.ok(BaseResponse.success("Transactions retrieved successfully!", response));
     }
 
     @GetMapping("/{id}")
