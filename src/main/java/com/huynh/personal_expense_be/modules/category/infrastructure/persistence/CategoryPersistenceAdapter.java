@@ -1,8 +1,8 @@
 package com.huynh.personal_expense_be.modules.category.infrastructure.persistence;
 
-import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
+import com.huynh.personal_expense_be.modules.category.domain.CategoryAnalysis;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -120,7 +120,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<CategoryAnalysisResponse> getCategoryAnalysis(String userId) {
+    public List<CategoryAnalysis> getCategoryAnalysis(String userId) {
         List<Object[]> rows = entityManager.createNativeQuery("""
                 SELECT
                     c.id::text,
@@ -144,13 +144,13 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
                 .getResultList();
 
         return rows.stream()
-                .map(row -> new CategoryAnalysisResponse(
+                .map(row -> new CategoryAnalysis(
+                        UUID.fromString(row[0].toString()),
                         ((Number) row[4]).intValue(),
                         ((Number) row[5]).intValue(),
+                        (String) row[1],
                         (BigDecimal) row[2],
-                        ((Number) row[3]).intValue(),
-                        UUID.fromString(row[0].toString()),
-                        (String) row[1]
+                        (Long) row[3]
                 ))
                 .toList();
     }
