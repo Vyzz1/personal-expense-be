@@ -40,10 +40,12 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
 
     private final MonthlyExpenseMapper monthlyExpenseMapper;
 
+    private final MonthlyPersistenceAdapter self; 
+
     @Transactional
     @Override
     public MonthlyExpense saveMonthlyExpense(MonthlyExpense monthlyExpense) {
-        return saveAllMonthlyExpenses(List.of(monthlyExpense)).get(0);
+        return this.self.saveAllMonthlyExpenses(List.of(monthlyExpense)).get(0);
     }
 
     @Transactional
