@@ -40,10 +40,12 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
 
     private final MonthlyExpenseMapper monthlyExpenseMapper;
 
+    private final MonthlyPersistenceAdapter self; 
+
     @Transactional
     @Override
     public MonthlyExpense saveMonthlyExpense(MonthlyExpense monthlyExpense) {
-        return saveAllMonthlyExpenses(List.of(monthlyExpense)).get(0);
+        return this.self.saveAllMonthlyExpenses(List.of(monthlyExpense)).get(0);
     }
 
     @Transactional
@@ -109,7 +111,7 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
                 .getResultList()
                 .stream()
                 .map(monthlyExpenseMapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -169,6 +171,6 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
 
         return results.stream()
                 .map(monthlyExpenseMapper::toDomain)
-                .collect(java.util.stream.Collectors.toList());
+                .toList();
     }
 }
