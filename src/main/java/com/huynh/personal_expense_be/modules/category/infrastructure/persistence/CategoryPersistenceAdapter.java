@@ -24,6 +24,11 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     private EntityManager entityManager;
     private final CategoryMapper categoryMapper;
 
+    private String QUERY_FIND_BY_ID = """
+            SELECT c FROM CategoryJpaEntity c
+            WHERE c.id = :id AND c.isDeleted IS NULL
+            """;
+
     @Override
     public Category save(Category category) {
         CategoryJpaEntity entity = categoryMapper.toJpaEntity(category);
@@ -34,9 +39,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     @Override
     public Optional<Category> findById(UUID id) {
-        CategoryJpaEntity entity = entityManager.createQuery(
-                        "SELECT c FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NULL",
-                        CategoryJpaEntity.class)
+        CategoryJpaEntity entity = entityManager.createQuery(QUERY_FIND_BY_ID, CategoryJpaEntity.class)
                 .setParameter("id", id)
                 .getResultStream()
                 .findFirst()
@@ -50,7 +53,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     @Override
     public List<Category> findAll() {
         List<CategoryJpaEntity> entities = entityManager
-                .createQuery("SELECT c FROM CategoryJpaEntity c WHERE c.isDeleted IS NULL", CategoryJpaEntity.class)
+                .createQuery(QUERY_FIND_BY_ID, CategoryJpaEntity.class)
                 .getResultList();
 
         Map<UUID, CategoryJpaEntity> entityMap = entities.stream()
@@ -72,9 +75,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     private Category resolveParent(UUID parentId) {
         if (parentId == null) return null;
-        CategoryJpaEntity parentEntity = entityManager.createQuery(
-                        "SELECT c FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NULL",
-                        CategoryJpaEntity.class)
+        CategoryJpaEntity parentEntity = entityManager.createQuery(QUERY_FIND_BY_ID, CategoryJpaEntity.class)
                 .setParameter("id", parentId)
                 .getResultStream()
                 .findFirst()
@@ -84,9 +85,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     @Override
     public void deleteById(UUID id) {
-        Optional<CategoryJpaEntity> entity = entityManager.createQuery(
-                        "SELECT c FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NULL",
-                        CategoryJpaEntity.class)
+        Optional<CategoryJpaEntity> entity = entityManager.createQuery(QUERY_FIND_BY_ID, CategoryJpaEntity.class)
                 .setParameter("id", id)
                 .getResultStream()
                 .findFirst();
