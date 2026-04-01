@@ -38,6 +38,8 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
 
     @Override
     public List<CategoryAnalysisResponse> getCategoryAnalysis(String userId) {
-        return categoryRepositoryPort.getCategoryAnalysis(userId);
+        return categoryRepositoryPort.getCategoryAnalysis(userId).stream()
+                .map(CategoryAnalysisResponse::from)
+                .toList();
     }
 }

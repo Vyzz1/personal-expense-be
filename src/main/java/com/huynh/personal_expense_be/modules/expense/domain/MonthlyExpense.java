@@ -38,7 +38,7 @@ public class MonthlyExpense {
         this.totalAmount = newTotal;
         this.changePercentage = previousTotal.compareTo(BigDecimal.ZERO) == 0
                 ? BigDecimal.ZERO
-                : newTotal.subtract(previousTotal).divide(previousTotal, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100));
+                : newTotal.subtract(previousTotal).divide(previousTotal, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
     }
 
     public void withPrevious(MonthlyExpense previousExpense) {
@@ -65,7 +65,7 @@ public class MonthlyExpense {
         this.totalAmount = newTotal;
         this.changePercentage = previousTotal.compareTo(BigDecimal.ZERO) == 0
                 ? BigDecimal.ZERO
-                : newTotal.subtract(previousTotal).divide(previousTotal, 4, BigDecimal.ROUND_HALF_UP).multiply(BigDecimal.valueOf(100));
+                : newTotal.subtract(previousTotal).divide(previousTotal, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
     }
 
 }

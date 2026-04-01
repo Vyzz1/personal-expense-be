@@ -1,8 +1,8 @@
 package com.huynh.personal_expense_be.modules.category.infrastructure.persistence;
 
-import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
+import com.huynh.personal_expense_be.modules.category.domain.CategoryAnalysis;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +24,11 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     private EntityManager entityManager;
     private final CategoryMapper categoryMapper;
 
+    private String QUERY_FIND_BY_ID = """
+            SELECT c FROM CategoryJpaEntity c
+            WHERE c.id = :id AND c.isDeleted IS NULL
+            """;
+
     @Override
     public Category save(Category category) {
         CategoryJpaEntity entity = categoryMapper.toJpaEntity(category);
@@ -34,9 +39,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     @Override
     public Optional<Category> findById(UUID id) {
-        CategoryJpaEntity entity = entityManager.createQuery(
-                        "SELECT c FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NULL",
-                        CategoryJpaEntity.class)
+        CategoryJpaEntity entity = entityManager.createQuery(QUERY_FIND_BY_ID, CategoryJpaEntity.class)
                 .setParameter("id", id)
                 .getResultStream()
                 .findFirst()
@@ -72,9 +75,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     private Category resolveParent(UUID parentId) {
         if (parentId == null) return null;
-        CategoryJpaEntity parentEntity = entityManager.createQuery(
-                        "SELECT c FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NULL",
-                        CategoryJpaEntity.class)
+        CategoryJpaEntity parentEntity = entityManager.createQuery(QUERY_FIND_BY_ID, CategoryJpaEntity.class)
                 .setParameter("id", parentId)
                 .getResultStream()
                 .findFirst()
@@ -84,9 +85,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     @Override
     public void deleteById(UUID id) {
-        Optional<CategoryJpaEntity> entity = entityManager.createQuery(
-                        "SELECT c FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NULL",
-                        CategoryJpaEntity.class)
+        Optional<CategoryJpaEntity> entity = entityManager.createQuery(QUERY_FIND_BY_ID, CategoryJpaEntity.class)
                 .setParameter("id", id)
                 .getResultStream()
                 .findFirst();
@@ -100,27 +99,30 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     @Override
     public boolean existsById(UUID id) {
         Long count = entityManager
-                .createQuery("SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS NOT NULL " , Long.class)
+                .createQuery("SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.id = :id AND c.isDeleted IS  NULL " , Long.class)
                 .setParameter("id", id)
                 .getSingleResult();
         return count > 0;
     }
 
     @Override
-    public boolean existsByNameAndUserId(String name, String userId) {
-        Long count = entityManager
+    public  Optional<Category> existsByNameAndUserId(String name, String userId) {
+        CategoryJpaEntity category = entityManager
                 .createQuery(
-                        "SELECT COUNT(c) FROM CategoryJpaEntity c WHERE c.name = :name AND c.userId = :userId AND c.isDeleted IS NULL",
-                        Long.class)
+                        "SELECT c FROM CategoryJpaEntity c WHERE c.name = :name AND c.userId = :userId AND c.isDeleted IS NULL",
+                        CategoryJpaEntity.class)
                 .setParameter("name", name)
                 .setParameter("userId", userId)
-                .getSingleResult();
-        return count > 0;
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+
+        return category != null ? Optional.of(categoryMapper.toDomain(category)) : Optional.empty();
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<CategoryAnalysisResponse> getCategoryAnalysis(String userId) {
+    public List<CategoryAnalysis> getCategoryAnalysis(String userId) {
         List<Object[]> rows = entityManager.createNativeQuery("""
                 SELECT
                     c.id::text,
@@ -144,13 +146,13 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
                 .getResultList();
 
         return rows.stream()
-                .map(row -> new CategoryAnalysisResponse(
+                .map(row -> new CategoryAnalysis(
+                        UUID.fromString(row[0].toString()),
                         ((Number) row[4]).intValue(),
                         ((Number) row[5]).intValue(),
+                        (String) row[1],
                         (BigDecimal) row[2],
-                        ((Number) row[3]).intValue(),
-                        UUID.fromString(row[0].toString()),
-                        (String) row[1]
+                        (Long) row[3]
                 ))
                 .toList();
     }
