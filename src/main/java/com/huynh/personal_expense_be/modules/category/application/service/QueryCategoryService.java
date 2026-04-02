@@ -29,8 +29,8 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
     }
 
     @Override
-    public List<CategoryResponse> getAllCategories() {
-        return categoryRepositoryPort.findAll()
+    public List<CategoryResponse> getAllCategories(String userId) {
+        return categoryRepositoryPort.findAllByUserId(userId)
                 .stream()
                 .map(CategoryResponse::from)
                 .toList();

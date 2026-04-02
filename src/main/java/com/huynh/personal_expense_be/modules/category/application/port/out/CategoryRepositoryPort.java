@@ -13,7 +13,7 @@ public interface CategoryRepositoryPort {
 
     Optional<Category> findById(UUID id);
 
-    List<Category> findAll();
+    List<Category> findAllByUserId(String userId);
 
     void deleteById(UUID id);
 

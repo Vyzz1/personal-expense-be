@@ -54,9 +54,9 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<CategoryResponse>>> getAll() {
+    public ResponseEntity<BaseResponse<List<CategoryResponse>>> getAll(Principal principal) {
         return ResponseEntity.ok(
-                BaseResponse.success("Categories retrieved successfully", getCategoryUseCase.getAllCategories()));
+                BaseResponse.success("Categories retrieved successfully", getCategoryUseCase.getAllCategories(principal.getName())));
     }
 
     @GetMapping("/analysis")

@@ -51,9 +51,10 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     }
 
     @Override
-    public List<Category> findAll() {
+    public List<Category> findAllByUserId(String userId) {
         List<CategoryJpaEntity> entities = entityManager
-                .createQuery("SELECT c FROM CategoryJpaEntity c WHERE c.isDeleted IS NULL", CategoryJpaEntity.class)
+                .createQuery("SELECT c FROM CategoryJpaEntity c WHERE c.isDeleted IS NULL AND c.userId = :userId", CategoryJpaEntity.class)
+                .setParameter("userId", userId)
                 .getResultList();
 
         Map<UUID, CategoryJpaEntity> entityMap = entities.stream()

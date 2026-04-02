@@ -66,12 +66,12 @@ public class QueryCategoryServiceTest {
 
     @Test
     void getAllCategories_returnsEmptyList() {
-        when(categoryRepositoryPort.findAll()).thenReturn(List.of());
+        when(categoryRepositoryPort.findAllByUserId("user-1")).thenReturn(List.of());
 
-        List<CategoryResponse> result = queryCategoryService.getAllCategories();
+        List<CategoryResponse> result = queryCategoryService.getAllCategories("user-1");
 
         assertTrue(result.isEmpty());
-        verify(categoryRepositoryPort).findAll();
+        verify(categoryRepositoryPort).findAllByUserId("user-1");
     }
 
     @Test
@@ -90,14 +90,14 @@ public class QueryCategoryServiceTest {
                         .createdAt(Instant.now())
                         .build());
 
-        when(categoryRepositoryPort.findAll()).thenReturn(categories);
+        when(categoryRepositoryPort.findAllByUserId("user-1")).thenReturn(categories);
 
-        List<CategoryResponse> result = queryCategoryService.getAllCategories();
+        List<CategoryResponse> result = queryCategoryService.getAllCategories("user-1");
 
         assertEquals(2, result.size());
         assertEquals("Food", result.get(0).name());
         assertEquals("Transport", result.get(1).name());
-        verify(categoryRepositoryPort).findAll();
+        verify(categoryRepositoryPort).findAllByUserId("user-1");
     }
 
     @Test
