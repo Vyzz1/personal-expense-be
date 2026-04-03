@@ -69,10 +69,13 @@ public class CategoryController {
     @PutMapping("/{id}")
     public ResponseEntity<BaseResponse<CategoryResponse>> update(
             @PathVariable UUID id,
-            @Valid @RequestBody UpdateCategoryRequest request) {
+            @Valid @RequestBody UpdateCategoryRequest request,
+            Principal principal
+        ) {
         UpdateCategoryCommand command = new UpdateCategoryCommand(
                 request.name(),
-                request.parentId()
+                request.parentId(),
+                principal.getName()
         );
         return ResponseEntity.ok(
                 BaseResponse.success("Category updated successfully", updateCategoryUseCase.updateCategory(id, command)));

@@ -151,6 +151,7 @@ public class CategoryControllerTest {
                 .thenReturn(updatedResponse);
 
         mockMvc.perform(put("/api/v1/categories/{id}", categoryId)
+                .principal(mockPrincipal)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())

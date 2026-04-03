@@ -8,12 +8,15 @@ import com.huynh.personal_expense_be.modules.category.application.port.in.Delete
 import com.huynh.personal_expense_be.modules.category.application.port.in.UpdateCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
-import com.huynh.personal_expense_be.shared.exception.DuplicateException;
+import com.huynh.personal_expense_be.shared.exception.BusinessValidationException;
 import com.huynh.personal_expense_be.shared.exception.NotFoundException;
+import com.huynh.personal_expense_be.shared.exception.ValidationFieldError;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -30,7 +33,15 @@ public class CommandCategoryService implements
     @Transactional
     public CategoryResponse createCategory(CreateCategoryCommand command) {
         if (categoryRepositoryPort.existsByNameAndUserId(command.name(), command.userId()).isPresent()) {
-            throw new DuplicateException("Category '" + command.name() + "' already exists for this user");
+
+            List<ValidationFieldError> fieldErrors = List.of(ValidationFieldError.of(
+                    "name",
+                    command.name(),
+                    "Category '" + command.name() + "' already exists for this user",
+                    null
+            ));
+
+            throw new BusinessValidationException(fieldErrors);
         }
         Category category = Category.builder()
                 .name(command.name())
@@ -47,6 +58,21 @@ public class CommandCategoryService implements
     @Override
     @Transactional
     public CategoryResponse updateCategory(UUID id, UpdateCategoryCommand command) {
+
+        if(categoryRepositoryPort.existsByNameAndUserId(command.name(), command.userId())
+                .filter(existing -> !existing.getId().equals(id))
+                .isPresent()) {
+
+            List<ValidationFieldError> fieldErrors = List.of(ValidationFieldError.of(
+                    "name",
+                    command.name(),
+                    "Category '" + command.name() + "' already exists for this user",
+                    null
+            ));
+
+            throw new BusinessValidationException(fieldErrors);
+        }
+
         Category existing = categoryRepositoryPort.findById(id)
                 .orElseThrow(() -> new NotFoundException("Category not found with id: " + id));
 
