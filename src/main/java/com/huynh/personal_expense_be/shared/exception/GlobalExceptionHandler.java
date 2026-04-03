@@ -128,6 +128,13 @@ public class GlobalExceptionHandler {
         return buildValidationResponse(fieldErrors, request.getRequestURI());
     }
 
+    @ExceptionHandler(BusinessValidationException.class)
+    public ResponseEntity<ValidationExceptionResponse> handleBusinessValidation(
+            BusinessValidationException ex, HttpServletRequest request) {
+
+        return buildValidationResponse(ex.getErrors(), request.getRequestURI());
+    }
+
     // -------------------------------------------------------------------------
     // Catch-all
     // -------------------------------------------------------------------------
