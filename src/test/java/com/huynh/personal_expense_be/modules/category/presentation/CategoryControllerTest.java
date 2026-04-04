@@ -75,6 +75,7 @@ public class CategoryControllerTest {
                 "Food",
                 "user1",
                 null,
+                new java.util.ArrayList<>(),
                 Instant.now(),
                 Instant.now());
     }
@@ -144,6 +145,7 @@ public class CategoryControllerTest {
                 "Updated Food",
                 "user1",
                 null,
+                new java.util.ArrayList<>(),
                 Instant.now(),
                 Instant.now());
 

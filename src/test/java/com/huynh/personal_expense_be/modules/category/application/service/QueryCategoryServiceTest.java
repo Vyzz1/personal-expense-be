@@ -50,7 +50,7 @@ public class QueryCategoryServiceTest {
         assertEquals("Food", result.name());
         assertEquals("user-1", result.userId());
         assertEquals(categoryId, result.id());
-        assertNull(result.parent());
+        assertNull(result.parentId());
         verify(categoryRepositoryPort).findById(categoryId);
     }
 

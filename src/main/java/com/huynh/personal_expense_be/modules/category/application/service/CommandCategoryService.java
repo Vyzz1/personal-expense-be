@@ -43,6 +43,21 @@ public class CommandCategoryService implements
 
             throw new BusinessValidationException(fieldErrors);
         }
+
+        if(command.parentId() != null){
+            if (categoryRepositoryPort.findById(command.parentId()).isEmpty()) {
+                List<ValidationFieldError> fieldErrors = List.of(ValidationFieldError.of(
+                        "parentId",
+                        command.parentId().toString(),
+                        "Parent category not found",
+                        null
+                ));
+
+                throw new BusinessValidationException(fieldErrors);
+                
+            }
+        }
+
         Category category = Category.builder()
                 .name(command.name())
                 .userId(command.userId())

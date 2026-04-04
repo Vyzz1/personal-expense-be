@@ -11,7 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -30,10 +33,33 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
 
     @Override
     public List<CategoryResponse> getAllCategories(String userId) {
-        return categoryRepositoryPort.findAllByUserId(userId)
-                .stream()
+        List<Category> allCategories = categoryRepositoryPort.findAllByUserId(userId);
+        List<CategoryResponse> allResponses = allCategories.stream()
                 .map(CategoryResponse::from)
                 .toList();
+
+        List<CategoryResponse> rootCategories = new ArrayList<>();
+        Map<UUID, CategoryResponse> responseMap = new HashMap<>();
+        
+        for (CategoryResponse response : allResponses) {
+            responseMap.put(response.id(), response);
+        }
+
+        for (CategoryResponse response : allResponses) {
+            if (response.parentId() == null) {
+                rootCategories.add(response);
+            } else {
+                CategoryResponse parent = responseMap.get(response.parentId());
+                if (parent != null) {
+                    parent.children().add(response);
+                } else {
+                 
+                    rootCategories.add(response);
+                }
+            }
+        }
+
+        return rootCategories;
     }
 
     @Override
