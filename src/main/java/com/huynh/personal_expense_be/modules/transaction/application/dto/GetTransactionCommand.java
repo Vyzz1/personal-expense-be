@@ -11,7 +11,7 @@ public record GetTransactionCommand(
         String userId,
         String description,
         List<UUID> categoryIds,
-        String type,
+        List<String> type,
         String fromDate,
         String toDate,
         int month,

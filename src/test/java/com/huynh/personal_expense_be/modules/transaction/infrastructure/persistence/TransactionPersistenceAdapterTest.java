@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -175,7 +176,7 @@ public class TransactionPersistenceAdapterTest {
         // Given
         GetTransactionCommand command = new GetTransactionCommand(
                 0, 10, "occurredAt", "desc", userId, "Test",
-                java.util.List.of(UUID.randomUUID()), "EXPENSE", "2023-01-01T00:00:00Z", "2023-12-31T23:59:59Z",
+                java.util.List.of(UUID.randomUUID()), List.of("EXPENSE"), "2023-01-01T00:00:00Z", "2023-12-31T23:59:59Z",
                 3, 2023);
 
         when(entityManager.createQuery(anyString(), eq(TransactionJpaEntity.class))).thenReturn(typedQuery);
@@ -237,7 +238,7 @@ public class TransactionPersistenceAdapterTest {
         // Given
         GetTransactionCommand command = new GetTransactionCommand(
                 0, -1, "", "", userId, "  ",
-                java.util.List.of(), "  ", "  ", "  ",
+                List.of(), List.of(), "  ", "  ",
                 -1, -1);
 
         when(entityManager.createQuery(anyString(), eq(TransactionJpaEntity.class))).thenReturn(typedQuery);
@@ -249,7 +250,7 @@ public class TransactionPersistenceAdapterTest {
         when(countQuery.getSingleResult()).thenReturn(1L);
         when(typedQuery.setFirstResult(anyInt())).thenReturn(typedQuery);
         when(typedQuery.setMaxResults(anyInt())).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(java.util.List.of(transactionJpaEntity));
+        when(typedQuery.getResultList()).thenReturn(List.of(transactionJpaEntity));
 
         when(transactionMapper.toDomain(transactionJpaEntity)).thenReturn(transaction);
 
