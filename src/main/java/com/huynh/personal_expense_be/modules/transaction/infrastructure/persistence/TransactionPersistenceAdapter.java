@@ -15,6 +15,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -46,7 +49,7 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
                 .setParameter("userId", userId)
                 .getResultList();
 
-        return  entities.stream()
+        return entities.stream()
                 .map(transactionMapper::toDomain)
                 .toList();
     }
@@ -87,7 +90,8 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
         String sortDir = (command.sortOrder() != null && command.sortOrder().equalsIgnoreCase("asc")) ? "ASC" : "DESC";
 
         TypedQuery<TransactionJpaEntity> dataQuery = entityManager.createQuery(
-                "SELECT t FROM TransactionJpaEntity t JOIN FETCH t.category " + where + " ORDER BY t." + sortBy + " " + sortDir,
+                "SELECT t FROM TransactionJpaEntity t JOIN FETCH t.category " + where + " ORDER BY t." + sortBy + " "
+                        + sortDir,
                 TransactionJpaEntity.class);
 
         TypedQuery<Long> countQuery = entityManager.createQuery(
@@ -105,20 +109,35 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
             dataQuery.setParameter("categoryIds", command.categoryIds());
             countQuery.setParameter("categoryIds", command.categoryIds());
         }
-        if (command.type() != null && !command.type().isBlank()) {
-            TransactionType type = TransactionType.valueOf(command.type().toUpperCase());
-            dataQuery.setParameter("type", type);
-            countQuery.setParameter("type", type);
+        if (command.type() != null && !command.type().isEmpty()) {
+            List<TransactionType> types = command.type().stream()
+                    .map(String::toUpperCase)
+                    .map(TransactionType::valueOf)
+                    .toList();
+            dataQuery.setParameter("type", types);
+            countQuery.setParameter("type", types);
         }
+        ZoneId zone = ZoneId.systemDefault();
+
         if (command.fromDate() != null && !command.fromDate().isBlank()) {
-            dataQuery.setParameter("fromDate", Instant.parse(command.fromDate()));
-            countQuery.setParameter("fromDate", Instant.parse(command.fromDate()));
+            LocalDate fromDate = LocalDate.parse(command.fromDate());
+            Instant fromInstant = fromDate.atStartOfDay(zone).toInstant();
+
+            dataQuery.setParameter("fromDate", fromInstant);
+            countQuery.setParameter("fromDate", fromInstant);
         }
+
         if (command.toDate() != null && !command.toDate().isBlank()) {
-            dataQuery.setParameter("toDate", Instant.parse(command.toDate()));
-            countQuery.setParameter("toDate", Instant.parse(command.toDate()));
+            LocalDate toDate = LocalDate.parse(command.toDate());
+            Instant toInstant = toDate.atTime(LocalTime.MAX)
+                    .atZone(zone)
+                    .toInstant();
+
+            dataQuery.setParameter("toDate", toInstant);
+            countQuery.setParameter("toDate", toInstant);
         }
-        if(command.month() > 0 && command.year() > 0) {
+
+        if (command.month() > 0 && command.year() > 0) {
             dataQuery.setParameter("month", command.month());
             dataQuery.setParameter("year", command.year());
             countQuery.setParameter("month", command.month());
@@ -150,8 +169,8 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
         if (command.categoryIds() != null && !command.categoryIds().isEmpty()) {
             where.append(" AND t.category.id IN :categoryIds");
         }
-        if (command.type() != null && !command.type().isBlank()) {
-            where.append(" AND t.type = :type");
+        if (command.type() != null && !command.type().isEmpty()) {
+            where.append(" AND t.type IN :type");
         }
         if (command.fromDate() != null && !command.fromDate().isBlank()) {
             where.append(" AND t.occurredAt >= :fromDate");
@@ -160,7 +179,7 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
             where.append(" AND t.occurredAt <= :toDate");
         }
 
-        if(command.month() > 0 && command.year() > 0) {
+        if (command.month() > 0 && command.year() > 0) {
             where.append(" AND MONTH(t.occurredAt) = :month AND YEAR(t.occurredAt) = :year");
         }
 

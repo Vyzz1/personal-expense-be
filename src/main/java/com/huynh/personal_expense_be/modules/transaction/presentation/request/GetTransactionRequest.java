@@ -13,7 +13,7 @@ public class GetTransactionRequest {
     private String sortOrder = "desc";
     private String description;
     private List<UUID> categoryIds;
-    private String type;
+    private List<String> type;
     private String fromDate;
     private String toDate;
     private int month;
