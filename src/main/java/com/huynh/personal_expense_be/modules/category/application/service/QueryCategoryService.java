@@ -34,32 +34,42 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
     @Override
     public List<CategoryResponse> getAllCategories(String userId) {
         List<Category> allCategories = categoryRepositoryPort.findAllByUserId(userId);
-        List<CategoryResponse> allResponses = allCategories.stream()
-                .map(CategoryResponse::from)
-                .toList();
 
-        List<CategoryResponse> rootCategories = new ArrayList<>();
-        Map<UUID, CategoryResponse> responseMap = new HashMap<>();
-        
-        for (CategoryResponse response : allResponses) {
-            responseMap.put(response.id(), response);
+        Map<UUID, CategoryResponse> map = new HashMap<>();
+
+        // map all
+        for (Category c : allCategories) {
+            map.put(c.getId(), CategoryResponse.from(c));
         }
+        // build tree
+        List<CategoryResponse> roots = new ArrayList<>();
 
-        for (CategoryResponse response : allResponses) {
-            if (response.parentId() == null) {
-                rootCategories.add(response);
+        for (CategoryResponse node : map.values()) {
+            if (node.parentId() == null) {
+                roots.add(node);
             } else {
-                CategoryResponse parent = responseMap.get(response.parentId());
+                CategoryResponse parent = map.get(node.parentId());
                 if (parent != null) {
-                    parent.children().add(response);
+                    parent.children().add(node);
                 } else {
-                 
-                    rootCategories.add(response);
+                    roots.add(node);
                 }
             }
         }
 
-        return rootCategories;
+        List<CategoryResponse> result = new ArrayList<>();
+        for (CategoryResponse root : roots) {
+            dfs(root, result);
+        }
+
+        return result;
+    }
+
+    private void dfs(CategoryResponse node, List<CategoryResponse> result) {
+        result.add(node);
+        for (CategoryResponse child : node.children()) {
+            dfs(child, result);
+        }
     }
 
     @Override
