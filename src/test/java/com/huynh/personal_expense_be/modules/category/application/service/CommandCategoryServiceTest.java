@@ -50,7 +50,7 @@ public class CommandCategoryServiceTest {
 
         assertEquals("Food", result.name());
         assertEquals("user-1", result.userId());
-        assertNull(result.parent());
+        assertNull(result.parentId());
         verify(categoryRepositoryPort).existsByNameAndUserId("Food", "user-1");
         verify(categoryRepositoryPort).save(any(Category.class));
     }
