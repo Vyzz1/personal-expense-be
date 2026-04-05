@@ -105,7 +105,7 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
             // Collect distinct (month, year) pairs for this user
             List<int[]> monthYearPairs = keys.stream()
                     .map(k -> new int[]{k.month(), k.year()})
-                    .collect(Collectors.toList());
+                    .toList();
 
             // Single query to fetch all existing rows for this user
             List<MonthlyExpense> existing = monthlyExpenseRepositoryPort

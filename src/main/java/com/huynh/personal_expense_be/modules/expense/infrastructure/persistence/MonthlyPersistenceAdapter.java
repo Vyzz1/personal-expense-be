@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.hibernate.Session;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,10 +42,14 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
 
     private final MonthlyExpenseMapper monthlyExpenseMapper;
 
+    @Autowired
+    @Lazy
+    private MonthlyPersistenceAdapter self; 
+
     @Transactional
     @Override
     public MonthlyExpense saveMonthlyExpense(MonthlyExpense monthlyExpense) {
-        return saveAllMonthlyExpenses(List.of(monthlyExpense)).get(0);
+        return this.self.saveAllMonthlyExpenses(List.of(monthlyExpense)).get(0);
     }
 
     @Transactional
@@ -109,7 +115,7 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
                 .getResultList()
                 .stream()
                 .map(monthlyExpenseMapper::toDomain)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -169,6 +175,6 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
 
         return results.stream()
                 .map(monthlyExpenseMapper::toDomain)
-                .collect(java.util.stream.Collectors.toList());
+                .toList();
     }
 }

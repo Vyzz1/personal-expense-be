@@ -108,9 +108,10 @@ public class CategoryControllerTest {
 
     @Test
     void getAll_ShouldReturnListOfCategories() throws Exception {
-        when(getCategoryUseCase.getAllCategories()).thenReturn(List.of(categoryResponse));
+        when(getCategoryUseCase.getAllCategories("user1")).thenReturn(List.of(categoryResponse));
 
-        mockMvc.perform(get("/api/v1/categories"))
+        mockMvc.perform(get("/api/v1/categories")
+                .principal(mockPrincipal))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Categories retrieved successfully"))
                 .andExpect(jsonPath("$.data[0].id").value(categoryId.toString()))

@@ -106,12 +106,13 @@ public class CategoryPersistenceAdapterTest {
     }
 
     @Test
-    void findAll_ShouldReturnCategoryList() {
+    void findAllByUserId_ShouldReturnCategoryList() {
         when(entityManager.createQuery(anyString(), eq(CategoryJpaEntity.class))).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(List.of(categoryJpaEntity));
+        when(typedQuery.setParameter("userId", "user1")).thenReturn(typedQuery);
         when(categoryMapper.toDomain(categoryJpaEntity, null)).thenReturn(category);
 
-        List<Category> result = adapter.findAll();
+        List<Category> result = adapter.findAllByUserId("user1");
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(categoryId);
