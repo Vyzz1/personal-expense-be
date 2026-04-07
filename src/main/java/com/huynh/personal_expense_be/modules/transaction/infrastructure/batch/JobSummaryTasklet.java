@@ -11,11 +11,17 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.stereotype.Component;
 
+import com.huynh.personal_expense_be.modules.transaction.application.port.in.NotifyBatchCompletionUseCase;
+
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class JobSummaryTasklet implements Tasklet {
+
+    private final NotifyBatchCompletionUseCase notifyBatchCompletionUseCase;
 
     @Override
     public @Nullable RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -56,6 +62,14 @@ public class JobSummaryTasklet implements Tasklet {
         log.info("Filtered: {}", totalFiltered);
         log.info("Duration: {} ms", durationMs);
         log.info("========================================");
+
+        String userId = jobExecution.getJobParameters().getString("userId");
+        if (userId != null && !userId.isBlank()) {
+            notifyBatchCompletionUseCase.notifyUser(userId, totalRead, totalWritten, totalSkipped);
+            log.info("SSE Notification sent to user: {}", userId);
+        } else {
+            log.warn("userId not found in job parameters. Cannot push SSE notification.");
+        }
 
         return RepeatStatus.FINISHED;
     }
