@@ -5,7 +5,7 @@ import com.huynh.personal_expense_be.modules.category.application.dto.CreateCate
 import com.huynh.personal_expense_be.modules.category.application.dto.UpdateCategoryCommand;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
-import com.huynh.personal_expense_be.shared.exception.DuplicateException;
+import com.huynh.personal_expense_be.shared.exception.BusinessValidationException;
 import com.huynh.personal_expense_be.shared.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,13 +50,13 @@ public class CommandCategoryServiceTest {
 
         assertEquals("Food", result.name());
         assertEquals("user-1", result.userId());
-        assertNull(result.parent());
+        assertNull(result.parentId());
         verify(categoryRepositoryPort).existsByNameAndUserId("Food", "user-1");
         verify(categoryRepositoryPort).save(any(Category.class));
     }
 
     @Test
-    void createCategory_throwsDuplicateException() {
+    void createCategory_throwsBusinessValidation() {
         var command = new CreateCategoryCommand("Food", "user-1", null);
 
         var existingCategory = Category.builder()
@@ -70,7 +70,7 @@ public class CommandCategoryServiceTest {
 
         when(categoryRepositoryPort.existsByNameAndUserId("Food", "user-1")).thenReturn(Optional.of(existingCategory));
 
-        assertThrows(DuplicateException.class, () -> commandCategoryService.createCategory(command));
+        assertThrows(BusinessValidationException.class, () -> commandCategoryService.createCategory(command));
 
         verify(categoryRepositoryPort).existsByNameAndUserId("Food", "user-1");
     }
@@ -78,7 +78,7 @@ public class CommandCategoryServiceTest {
     @Test
     void updateCategory_success() {
         UUID categoryId = UUID.randomUUID();
-        var command = new UpdateCategoryCommand("Food Updated", null);
+        var command = new UpdateCategoryCommand("Food Updated", null, "user-1");
         var existingCategory = Category.builder()
                 .id(categoryId)
                 .name("Food")
@@ -110,13 +110,36 @@ public class CommandCategoryServiceTest {
     @Test
     void updateCategory_throwsNotFoundException() {
         UUID categoryId = UUID.randomUUID();
-        var command = new UpdateCategoryCommand("Food Updated", null);
+        var command = new UpdateCategoryCommand("Food Updated", null, "user-1");
 
         when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> commandCategoryService.updateCategory(categoryId, command));
 
         verify(categoryRepositoryPort).findById(categoryId);
+    }
+
+
+     @Test
+    void updateCategory_throwsBusinessValidation() {
+        UUID categoryId = UUID.randomUUID();
+        var command = new UpdateCategoryCommand("Food Updated", null, "user-1");
+
+        var anotherCategoryWithSameName = Category.builder()
+                .id(UUID.randomUUID())
+                .name("Food Updated")
+                .userId("user-1")
+                .parentId(null)
+                .createdAt(Instant.now())
+                .updatedAt(Instant.now())
+                .build();
+
+        when(categoryRepositoryPort.existsByNameAndUserId("Food Updated", "user-1"))
+                .thenReturn(Optional.of(anotherCategoryWithSameName));
+
+        assertThrows(BusinessValidationException.class, () -> commandCategoryService.updateCategory(categoryId, command));
+
+        verify(categoryRepositoryPort).existsByNameAndUserId("Food Updated", "user-1");
     }
 
     @Test
