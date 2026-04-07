@@ -137,7 +137,8 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
                 WHERE t.type = 'EXPENSE'
                   AND t.user_id = :userId
                   AND t.is_deleted IS NULL
-                  AND t.occurred_at BETWEEN (NOW() - INTERVAL '3 MONTHS') AND NOW()
+                  AND EXTRACT(YEAR FROM t.occurred_at) = EXTRACT(YEAR FROM CURRENT_DATE)
+                  AND EXTRACT(MONTH FROM t.occurred_at) = EXTRACT(MONTH FROM CURRENT_DATE)
                 GROUP BY c.id, c.name,
                          EXTRACT(MONTH FROM t.occurred_at),
                          EXTRACT(YEAR  FROM t.occurred_at)
