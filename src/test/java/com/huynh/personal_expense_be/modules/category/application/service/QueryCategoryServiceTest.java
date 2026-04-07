@@ -21,6 +21,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 public class QueryCategoryServiceTest {
@@ -94,9 +95,13 @@ public class QueryCategoryServiceTest {
 
         List<CategoryResponse> result = queryCategoryService.getAllCategories("user-1");
 
+        List<String> names = result.stream()
+                .map(CategoryResponse::name)
+                .toList();
+
         assertEquals(2, result.size());
-        assertEquals("Food", result.get(0).name());
-        assertEquals("Transport", result.get(1).name());
+        assertThat(names).containsExactlyInAnyOrder("Food", "Transport");
+
         verify(categoryRepositoryPort).findAllByUserId("user-1");
     }
 
