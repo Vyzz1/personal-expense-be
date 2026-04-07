@@ -2,6 +2,7 @@ package com.huynh.personal_expense_be.modules.category.application.service;
 
 import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.application.dto.CategoryResponse;
+import com.huynh.personal_expense_be.modules.category.application.dto.GetCategoryAnalysisCommand;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
 import com.huynh.personal_expense_be.modules.category.domain.CategoryAnalysis;
@@ -107,12 +108,15 @@ public class QueryCategoryServiceTest {
 
     @Test
     void getCategoryAnalysis_returnsEmptyList() {
-        when(categoryRepositoryPort.getCategoryAnalysis("user-1")).thenReturn(List.of());
 
-        List<CategoryAnalysisResponse> result = queryCategoryService.getCategoryAnalysis("user-1");
+        GetCategoryAnalysisCommand command = new GetCategoryAnalysisCommand("user-1", 3, 2026);
+
+        when(categoryRepositoryPort.getCategoryAnalysis("user-1",command.month(),command.year())).thenReturn(List.of());
+
+        List<CategoryAnalysisResponse> result = queryCategoryService.getCategoryAnalysis(command);
 
         assertTrue(result.isEmpty());
-        verify(categoryRepositoryPort).getCategoryAnalysis("user-1");
+        verify(categoryRepositoryPort).getCategoryAnalysis("user-1",command.month(),command.year());
     }
 
     @Test
@@ -134,19 +138,20 @@ public class QueryCategoryServiceTest {
                         .totalAmount(new BigDecimal("75.00"))
                         .transactionCount(3L)
                         .build());
+        GetCategoryAnalysisCommand command = new GetCategoryAnalysisCommand("user-1", 3, 2026);
 
-        when(categoryRepositoryPort.getCategoryAnalysis("user-1")).thenReturn(analyses);
+        when(categoryRepositoryPort.getCategoryAnalysis(command.userId(),command.month(),command.year())).thenReturn(analyses);
 
-        List<CategoryAnalysisResponse> result = queryCategoryService.getCategoryAnalysis("user-1");
+        List<CategoryAnalysisResponse> result = queryCategoryService.getCategoryAnalysis(command);
 
         assertEquals(2, result.size());
-        assertEquals(3, result.get(0).month());
-        assertEquals(2026, result.get(0).year());
-        assertEquals("Food", result.get(0).name());
+        assertEquals(3, result.getFirst().month());
+        assertEquals(2026, result.getFirst().year());
+        assertEquals("Food", result.getFirst().name());
         assertEquals(new BigDecimal("150.50"), result.get(0).totalAmount());
         assertEquals(5L, result.get(0).transactionCount());
         assertEquals("Transport", result.get(1).name());
-        verify(categoryRepositoryPort).getCategoryAnalysis("user-1");
+        verify(categoryRepositoryPort).getCategoryAnalysis(command.userId(),command.month(),command.year());
     }
 
 }

@@ -2,6 +2,7 @@ package com.huynh.personal_expense_be.modules.category.application.service;
 
 import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.application.dto.CategoryResponse;
+import com.huynh.personal_expense_be.modules.category.application.dto.GetCategoryAnalysisCommand;
 import com.huynh.personal_expense_be.modules.category.application.port.in.GetCategoryAnalysisUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.GetCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
@@ -70,8 +71,8 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
     }
 
     @Override
-    public List<CategoryAnalysisResponse> getCategoryAnalysis(String userId) {
-        return categoryRepositoryPort.getCategoryAnalysis(userId).stream()
+    public List<CategoryAnalysisResponse> getCategoryAnalysis(GetCategoryAnalysisCommand command) {
+        return categoryRepositoryPort.getCategoryAnalysis(command.userId(), command.month(),command.year()).stream()
                 .map(CategoryAnalysisResponse::from)
                 .toList();
     }
