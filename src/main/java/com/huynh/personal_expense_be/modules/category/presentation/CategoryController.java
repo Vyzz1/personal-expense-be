@@ -1,15 +1,13 @@
 package com.huynh.personal_expense_be.modules.category.presentation;
 
-import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
-import com.huynh.personal_expense_be.modules.category.application.dto.CategoryResponse;
-import com.huynh.personal_expense_be.modules.category.application.dto.CreateCategoryCommand;
-import com.huynh.personal_expense_be.modules.category.application.dto.UpdateCategoryCommand;
+import com.huynh.personal_expense_be.modules.category.application.dto.*;
 import com.huynh.personal_expense_be.modules.category.application.port.in.CreateCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.DeleteCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.GetCategoryAnalysisUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.GetCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.UpdateCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.presentation.request.CreateCategoryRequest;
+import com.huynh.personal_expense_be.modules.category.presentation.request.GetCategoryAnalysisRequest;
 import com.huynh.personal_expense_be.modules.category.presentation.request.UpdateCategoryRequest;
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
 import jakarta.validation.Valid;
@@ -60,10 +58,20 @@ public class CategoryController {
     }
 
     @GetMapping("/analysis")
-    public ResponseEntity<BaseResponse<List<CategoryAnalysisResponse>>> getCategoryAnalysis(Principal principal) {
+    public ResponseEntity<BaseResponse<List<CategoryAnalysisResponse>>> getCategoryAnalysis(
+            @ModelAttribute @Valid GetCategoryAnalysisRequest request,
+            Principal principal) {
+
+        String userId = principal.getName();
+        GetCategoryAnalysisCommand command = new GetCategoryAnalysisCommand(
+                userId,
+                request.month(),
+                request.year()
+        );
+
         return ResponseEntity.ok(
                 BaseResponse.success("Category analysis retrieved successfully",
-                        getCategoryAnalysisUseCase.getCategoryAnalysis(principal.getName())));
+                        getCategoryAnalysisUseCase.getCategoryAnalysis(command)));
     }
 
     @PutMapping("/{id}")

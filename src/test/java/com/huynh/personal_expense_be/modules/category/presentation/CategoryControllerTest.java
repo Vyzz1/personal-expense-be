@@ -1,9 +1,6 @@
 package com.huynh.personal_expense_be.modules.category.presentation;
 
-import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
-import com.huynh.personal_expense_be.modules.category.application.dto.CategoryResponse;
-import com.huynh.personal_expense_be.modules.category.application.dto.CreateCategoryCommand;
-import com.huynh.personal_expense_be.modules.category.application.dto.UpdateCategoryCommand;
+import com.huynh.personal_expense_be.modules.category.application.dto.*;
 import com.huynh.personal_expense_be.modules.category.application.port.in.*;
 import com.huynh.personal_expense_be.modules.category.presentation.request.CreateCategoryRequest;
 import com.huynh.personal_expense_be.modules.category.presentation.request.UpdateCategoryRequest;
@@ -121,10 +118,13 @@ public class CategoryControllerTest {
 
     @Test
     void getCategoryAnalysis_ShouldReturnAnalysisList() throws Exception {
+
+        GetCategoryAnalysisCommand command = new GetCategoryAnalysisCommand("user1", 10, 2023);
+
         CategoryAnalysisResponse analysisResponse = new CategoryAnalysisResponse(
                 10, 2023, BigDecimal.TEN, 5L, categoryId, "Food");
 
-        when(getCategoryAnalysisUseCase.getCategoryAnalysis("user1")).thenReturn(List.of(analysisResponse));
+        when(getCategoryAnalysisUseCase.getCategoryAnalysis(command)).thenReturn(List.of(analysisResponse));
 
         mockMvc.perform(get("/api/v1/categories/analysis")
                 .principal(mockPrincipal))
