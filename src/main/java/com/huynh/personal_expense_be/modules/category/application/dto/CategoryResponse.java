@@ -3,13 +3,16 @@ package com.huynh.personal_expense_be.modules.category.application.dto;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public record CategoryResponse(
         UUID id,
         String name,
         String userId,
-        CategoryResponse parent,
+        UUID parentId,
+        List<CategoryResponse> children,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -18,7 +21,8 @@ public record CategoryResponse(
                 category.getId(),
                 category.getName(),
                 category.getUserId(),
-                category.getParent() != null ? CategoryResponse.from(category.getParent()) : null,
+                category.getParentId(),
+                new ArrayList<>(),
                 category.getCreatedAt(),
                 category.getUpdatedAt()
         );

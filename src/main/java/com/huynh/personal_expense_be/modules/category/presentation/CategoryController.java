@@ -54,9 +54,9 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<CategoryResponse>>> getAll() {
+    public ResponseEntity<BaseResponse<List<CategoryResponse>>> getAll(Principal principal) {
         return ResponseEntity.ok(
-                BaseResponse.success("Categories retrieved successfully", getCategoryUseCase.getAllCategories()));
+                BaseResponse.success("Categories retrieved successfully", getCategoryUseCase.getAllCategories(principal.getName())));
     }
 
     @GetMapping("/analysis")
@@ -69,10 +69,13 @@ public class CategoryController {
     @PutMapping("/{id}")
     public ResponseEntity<BaseResponse<CategoryResponse>> update(
             @PathVariable UUID id,
-            @Valid @RequestBody UpdateCategoryRequest request) {
+            @Valid @RequestBody UpdateCategoryRequest request,
+            Principal principal
+        ) {
         UpdateCategoryCommand command = new UpdateCategoryCommand(
                 request.name(),
-                request.parentId()
+                request.parentId(),
+                principal.getName()
         );
         return ResponseEntity.ok(
                 BaseResponse.success("Category updated successfully", updateCategoryUseCase.updateCategory(id, command)));

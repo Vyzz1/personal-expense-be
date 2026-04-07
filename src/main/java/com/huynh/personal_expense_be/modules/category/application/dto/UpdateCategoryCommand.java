@@ -4,5 +4,6 @@ import java.util.UUID;
 
 public record UpdateCategoryCommand(
         String name,
-        UUID parentId
+        UUID parentId,
+        String userId
 ) {}

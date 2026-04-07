@@ -1,7 +1,7 @@
 package com.huynh.personal_expense_be.modules.category.application.port.out;
 
-import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
+import com.huynh.personal_expense_be.modules.category.domain.CategoryAnalysis;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +13,7 @@ public interface CategoryRepositoryPort {
 
     Optional<Category> findById(UUID id);
 
-    List<Category> findAll();
+    List<Category> findAllByUserId(String userId);
 
     void deleteById(UUID id);
 
@@ -21,5 +21,6 @@ public interface CategoryRepositoryPort {
 
     Optional<Category> existsByNameAndUserId(String name, String userId);
 
-    List<CategoryAnalysisResponse> getCategoryAnalysis(String userId);
+    List<CategoryAnalysis> getCategoryAnalysis(String userId);
+
 }

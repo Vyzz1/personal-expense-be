@@ -9,5 +9,5 @@ public interface GetCategoryUseCase {
 
     CategoryResponse getCategoryById(UUID id);
 
-    List<CategoryResponse> getAllCategories();
+    List<CategoryResponse> getAllCategories(String userId);
 }

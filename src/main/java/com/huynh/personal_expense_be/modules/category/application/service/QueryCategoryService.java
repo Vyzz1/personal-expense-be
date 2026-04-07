@@ -11,7 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -29,15 +32,50 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
     }
 
     @Override
-    public List<CategoryResponse> getAllCategories() {
-        return categoryRepositoryPort.findAll()
-                .stream()
-                .map(CategoryResponse::from)
-                .toList();
+    public List<CategoryResponse> getAllCategories(String userId) {
+        List<Category> allCategories = categoryRepositoryPort.findAllByUserId(userId);
+
+        Map<UUID, CategoryResponse> map = new HashMap<>();
+
+        // map all
+        for (Category c : allCategories) {
+            map.put(c.getId(), CategoryResponse.from(c));
+        }
+        // build tree
+        List<CategoryResponse> roots = new ArrayList<>();
+
+        for (CategoryResponse node : map.values()) {
+            if (node.parentId() == null) {
+                roots.add(node);
+            } else {
+                CategoryResponse parent = map.get(node.parentId());
+                if (parent != null) {
+                    parent.children().add(node);
+                } else {
+                    roots.add(node);
+                }
+            }
+        }
+
+        List<CategoryResponse> result = new ArrayList<>();
+        for (CategoryResponse root : roots) {
+            dfs(root, result);
+        }
+
+        return result;
+    }
+
+    private void dfs(CategoryResponse node, List<CategoryResponse> result) {
+        result.add(node);
+        for (CategoryResponse child : node.children()) {
+            dfs(child, result);
+        }
     }
 
     @Override
     public List<CategoryAnalysisResponse> getCategoryAnalysis(String userId) {
-        return categoryRepositoryPort.getCategoryAnalysis(userId);
+        return categoryRepositoryPort.getCategoryAnalysis(userId).stream()
+                .map(CategoryAnalysisResponse::from)
+                .toList();
     }
 }
