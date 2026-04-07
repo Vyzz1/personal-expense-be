@@ -11,11 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +31,7 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
     public List<CategoryResponse> getAllCategories(String userId) {
         List<Category> allCategories = categoryRepositoryPort.findAllByUserId(userId);
 
-        Map<UUID, CategoryResponse> map = new HashMap<>();
+        Map<UUID, CategoryResponse> map = new LinkedHashMap<>();
 
         // map all
         for (Category c : allCategories) {
@@ -62,6 +58,7 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
             dfs(root, result);
         }
 
+        result.sort(Comparator.comparing(CategoryResponse::createdAt));
         return result;
     }
 
