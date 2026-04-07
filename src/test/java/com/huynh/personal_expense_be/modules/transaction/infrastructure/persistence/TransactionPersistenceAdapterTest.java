@@ -176,7 +176,7 @@ public class TransactionPersistenceAdapterTest {
         // Given
         GetTransactionCommand command = new GetTransactionCommand(
                 0, 10, "occurredAt", "desc", userId, "Test",
-                java.util.List.of(UUID.randomUUID()), List.of("EXPENSE"), "2023-01-01T00:00:00Z", "2023-12-31T23:59:59Z",
+                java.util.List.of(UUID.randomUUID()), List.of("EXPENSE"), "2023-01-01", "2023-12-31",
                 3, 2023);
 
         when(entityManager.createQuery(anyString(), eq(TransactionJpaEntity.class))).thenReturn(typedQuery);
