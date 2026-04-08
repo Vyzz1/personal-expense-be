@@ -123,7 +123,7 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
 
     @Override
     @SuppressWarnings("unchecked")
-    public List<CategoryAnalysis> getCategoryAnalysis(String userId) {
+    public List<CategoryAnalysis> getCategoryAnalysis(String userId, int month, int year) {
         List<Object[]> rows = entityManager.createNativeQuery("""
                 SELECT
                     c.id::text,
@@ -137,13 +137,16 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
                 WHERE t.type = 'EXPENSE'
                   AND t.user_id = :userId
                   AND t.is_deleted IS NULL
-                  AND t.occurred_at BETWEEN (NOW() - INTERVAL '3 MONTHS') AND NOW()
+                  AND EXTRACT(YEAR FROM t.occurred_at) = :year
+                  AND EXTRACT(MONTH FROM t.occurred_at) = :month
                 GROUP BY c.id, c.name,
                          EXTRACT(MONTH FROM t.occurred_at),
                          EXTRACT(YEAR  FROM t.occurred_at)
                 ORDER BY year, month, total DESC
                 """)
                 .setParameter("userId", userId)
+                .setParameter("month", month)
+                .setParameter("year", year)
                 .getResultList();
 
         return rows.stream()

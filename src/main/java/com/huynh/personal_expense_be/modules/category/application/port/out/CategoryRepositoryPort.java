@@ -21,6 +21,6 @@ public interface CategoryRepositoryPort {
 
     Optional<Category> existsByNameAndUserId(String name, String userId);
 
-    List<CategoryAnalysis> getCategoryAnalysis(String userId);
+    List<CategoryAnalysis> getCategoryAnalysis(String userId, int month, int year);
 
 }

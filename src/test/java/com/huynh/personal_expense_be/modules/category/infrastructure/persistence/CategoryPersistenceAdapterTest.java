@@ -160,9 +160,11 @@ public class CategoryPersistenceAdapterTest {
         Object[] row = new Object[] { categoryId.toString(), "Test Category", BigDecimal.TEN, 5L, 10, 2023 };
         when(entityManager.createNativeQuery(anyString())).thenReturn(nativeQuery);
         when(nativeQuery.setParameter("userId", "user1")).thenReturn(nativeQuery);
+        when(nativeQuery.setParameter("month", 10)).thenReturn(nativeQuery);
+        when(nativeQuery.setParameter("year", 2023)).thenReturn(nativeQuery);
         when(nativeQuery.getResultList()).thenReturn(List.<Object[]>of(row));
 
-        List<CategoryAnalysis> result = adapter.getCategoryAnalysis("user1");
+        List<CategoryAnalysis> result = adapter.getCategoryAnalysis("user1", 10, 2023);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo(categoryId);

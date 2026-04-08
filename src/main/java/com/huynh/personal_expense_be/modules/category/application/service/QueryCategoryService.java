@@ -2,6 +2,7 @@ package com.huynh.personal_expense_be.modules.category.application.service;
 
 import com.huynh.personal_expense_be.modules.category.application.dto.CategoryAnalysisResponse;
 import com.huynh.personal_expense_be.modules.category.application.dto.CategoryResponse;
+import com.huynh.personal_expense_be.modules.category.application.dto.GetCategoryAnalysisCommand;
 import com.huynh.personal_expense_be.modules.category.application.port.in.GetCategoryAnalysisUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.in.GetCategoryUseCase;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
@@ -11,11 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +32,7 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
     public List<CategoryResponse> getAllCategories(String userId) {
         List<Category> allCategories = categoryRepositoryPort.findAllByUserId(userId);
 
-        Map<UUID, CategoryResponse> map = new HashMap<>();
+        Map<UUID, CategoryResponse> map = new LinkedHashMap<>();
 
         // map all
         for (Category c : allCategories) {
@@ -62,6 +59,7 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
             dfs(root, result);
         }
 
+        result.sort(Comparator.comparing(CategoryResponse::createdAt));
         return result;
     }
 
@@ -73,8 +71,8 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
     }
 
     @Override
-    public List<CategoryAnalysisResponse> getCategoryAnalysis(String userId) {
-        return categoryRepositoryPort.getCategoryAnalysis(userId).stream()
+    public List<CategoryAnalysisResponse> getCategoryAnalysis(GetCategoryAnalysisCommand command) {
+        return categoryRepositoryPort.getCategoryAnalysis(command.userId(), command.month(),command.year()).stream()
                 .map(CategoryAnalysisResponse::from)
                 .toList();
     }
