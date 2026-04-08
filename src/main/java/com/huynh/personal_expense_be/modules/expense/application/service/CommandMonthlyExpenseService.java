@@ -39,8 +39,6 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
         MonthlyExpense toUpsert;
         if (existing == null) {
             // Brand-new month bucket — look up previous month for % comparison
-            MonthlyExpense previous = monthlyExpenseRepositoryPort.findByUserIdAndMonth(
-                    command.userId(), month == 1 ? 12 : month - 1, month == 1 ? year - 1 : year);
 
             toUpsert = MonthlyExpense.builder()
                     .userId(command.userId())
@@ -48,16 +46,8 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
                     .year(year)
                     .totalAmount(command.amount())   // delta == first amount
                     .build();
-            toUpsert.withPrevious(previous);
         } else {
-            BigDecimal newTotal = existing.getTotalAmount().add(command.amount());
-            BigDecimal prevTotal = existing.getPreviousTotalAmount() != null
-                    ? existing.getPreviousTotalAmount() : BigDecimal.ZERO;
-            BigDecimal changePct = prevTotal.compareTo(BigDecimal.ZERO) == 0
-                    ? BigDecimal.ZERO
-                    : newTotal.subtract(prevTotal)
-                              .divide(prevTotal, 4, java.math.RoundingMode.HALF_UP)
-                              .multiply(BigDecimal.valueOf(100));
+
 
             log.info("Existing MonthlyExpense for userId={}, month={}, year={}. Upsert delta={}.",
                     command.userId(), month, year, command.amount());
@@ -65,7 +55,6 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
             // Pass delta (not accumulated total) — upsert adds it onto DB total atomically
             toUpsert = existing.toBuilder()
                     .totalAmount(command.amount())      // ← delta only
-                    .changePercentage(changePct)
                     .build();
         }
 
@@ -127,17 +116,9 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
                 BigDecimal amount  = aggregated.get(key);
                 String     mapKey  = key.month() + "_" + key.year();
                 MonthlyExpense me  = existingMap.get(mapKey);
-
+               
                 if (me == null) {
                     // No existing record — fetch previous month in-memory or via DB
-                    int prevMonth = key.month() == 1 ? 12 : key.month() - 1;
-                    int prevYear  = key.month() == 1 ? key.year() - 1 : key.year();
-                    String prevKey = prevMonth + "_" + prevYear;
-
-                    MonthlyExpense previous = existingMap.get(prevKey);
-                    if (previous == null) {
-                        previous = monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, prevMonth, prevYear);
-                    }
 
                     me = MonthlyExpense.builder()
                             .userId(userId)
@@ -145,24 +126,12 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
                             .year(key.year())
                             .totalAmount(amount)    // first/only contribution = delta
                             .build();
-                    me.withPrevious(previous);
                 } else {
-                    BigDecimal newTotal  = me.getTotalAmount().add(amount);
-                    BigDecimal prevTotal = me.getPreviousTotalAmount() != null
-                            ? me.getPreviousTotalAmount() : BigDecimal.ZERO;
-                    BigDecimal changePct = prevTotal.compareTo(BigDecimal.ZERO) == 0
-                            ? BigDecimal.ZERO
-                            : newTotal.subtract(prevTotal)
-                                      .divide(prevTotal, 4, java.math.RoundingMode.HALF_UP)
-                                      .multiply(BigDecimal.valueOf(100));
 
-                    log.info("Batch upsert: userId={}, month={}, year={}, delta={}.",
-                            userId, key.month(), key.year(), amount);
 
                     // Pass DELTA as totalAmount — DB upsert adds it atomically
                     me = me.toBuilder()
                             .totalAmount(amount)        // ← delta only
-                            .changePercentage(changePct)
                             .build();
                 }
 
@@ -200,19 +169,12 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
         log.info("Deducting amount for userId={}, month={}, year={}, delta={}.",
                 command.userId(), month, year, command.deductAmount());
 
-        BigDecimal newTotal  = existing.getTotalAmount().subtract(command.deductAmount());
-        BigDecimal prevTotal = existing.getPreviousTotalAmount() != null
-                ? existing.getPreviousTotalAmount() : BigDecimal.ZERO;
-        BigDecimal changePct = prevTotal.compareTo(BigDecimal.ZERO) == 0
-                ? BigDecimal.ZERO
-                : newTotal.subtract(prevTotal)
-                          .divide(prevTotal, 4, java.math.RoundingMode.HALF_UP)
-                          .multiply(BigDecimal.valueOf(100));
+
+
 
         // Pass NEGATIVE delta — upsert does total_amount += (-deductAmount)
         MonthlyExpense toUpsert = existing.toBuilder()
                 .totalAmount(command.deductAmount().negate())   // ← negative delta
-                .changePercentage(changePct)
                 .build();
 
         monthlyExpenseRepositoryPort.saveMonthlyExpense(toUpsert);
@@ -236,19 +198,11 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
                 command.userId(), month, year, command.oldAmount(), command.newAmount());
 
         BigDecimal diff      = command.newAmount().subtract(command.oldAmount()); // can be negative
-        BigDecimal newTotal  = existing.getTotalAmount().add(diff);
-        BigDecimal prevTotal = existing.getPreviousTotalAmount() != null
-                ? existing.getPreviousTotalAmount() : BigDecimal.ZERO;
-        BigDecimal changePct = prevTotal.compareTo(BigDecimal.ZERO) == 0
-                ? BigDecimal.ZERO
-                : newTotal.subtract(prevTotal)
-                          .divide(prevTotal, 4, java.math.RoundingMode.HALF_UP)
-                          .multiply(BigDecimal.valueOf(100));
+
 
         // Pass DIFF as delta — upsert does total_amount += diff atomically
         MonthlyExpense toUpsert = existing.toBuilder()
                 .totalAmount(diff)          // ← delta (newAmount - oldAmount)
-                .changePercentage(changePct)
                 .build();
 
         monthlyExpenseRepositoryPort.saveMonthlyExpense(toUpsert);

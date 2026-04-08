@@ -21,7 +21,7 @@ import com.huynh.personal_expense_be.modules.expense.application.dto.GetMonthlyE
 import com.huynh.personal_expense_be.modules.expense.application.dto.GetMonthlyExpenseResponse;
 import com.huynh.personal_expense_be.modules.expense.application.dto.GetThreeMonthCompareCommand;
 import com.huynh.personal_expense_be.modules.expense.application.port.out.MonthlyExpenseRepositoryPort;
-import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpense;
+import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpenseAnalysis;
 
 @ExtendWith(MockitoExtension.class)
 public class QueryMonthExpenseServiceTest {
@@ -35,7 +35,7 @@ public class QueryMonthExpenseServiceTest {
     private String userId;
     private int month;
     private int year;
-    private MonthlyExpense mockExpense;
+    private MonthlyExpenseAnalysis mockExpense;
 
     @BeforeEach
     void setUp() {
@@ -43,14 +43,14 @@ public class QueryMonthExpenseServiceTest {
         month = 5;
         year = 2024;
         
-        mockExpense = MonthlyExpense.builder()
+        mockExpense = MonthlyExpenseAnalysis.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .month(month)
                 .year(year)
-                .totalAmount(BigDecimal.valueOf(1000))
                 .previousTotalAmount(BigDecimal.valueOf(800))
                 .changePercentage(BigDecimal.valueOf(25.0))
+                .totalAmount(BigDecimal.valueOf(1000))
                 .updatedAt(Instant.now())
                 .build();
     }
@@ -98,14 +98,14 @@ public class QueryMonthExpenseServiceTest {
         // Given
         GetThreeMonthCompareCommand command = new GetThreeMonthCompareCommand(userId, month, year);
         
-        MonthlyExpense priorExpense = MonthlyExpense.builder()
+        MonthlyExpenseAnalysis priorExpense = MonthlyExpenseAnalysis.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .month(4)
                 .year(year)
                 .totalAmount(BigDecimal.valueOf(800))
-                .previousTotalAmount(BigDecimal.valueOf(600))
-                .changePercentage(BigDecimal.valueOf(33.33))
+                .previousTotalAmount(BigDecimal.valueOf(800))
+                .changePercentage(BigDecimal.valueOf(25.0))
                 .updatedAt(Instant.now())
                 .build();
 
@@ -124,5 +124,6 @@ public class QueryMonthExpenseServiceTest {
         
         assertEquals(BigDecimal.valueOf(1000), responses.get(1).totalAmount());
         assertEquals(month, responses.get(1).month());
+        assertEquals(BigDecimal.valueOf(25.0), responses.get(1).changePercentage());
     }
 }

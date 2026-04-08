@@ -3,9 +3,6 @@ package com.huynh.personal_expense_be.modules.expense.application.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -14,6 +11,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Collections;
 
+import com.huynh.personal_expense_be.modules.expense.application.port.out.ExpenseNotificationPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,12 +20,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
 
 import com.huynh.personal_expense_be.modules.expense.application.dto.UpdateExpenseCommand;
 import com.huynh.personal_expense_be.modules.expense.application.dto.DeductExpenseCommand;
 import com.huynh.personal_expense_be.modules.expense.application.dto.RecordExpenseCommand;
 import com.huynh.personal_expense_be.modules.expense.application.port.out.MonthlyExpenseRepositoryPort;
 import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpense;
+import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpenseAnalysis;
 import com.huynh.personal_expense_be.shared.utility.Utility;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +35,9 @@ public class CommandMonthExpenseServiceTest {
 
     @Mock
     private MonthlyExpenseRepositoryPort monthlyExpenseRepositoryPort;
+
+    @Mock
+    private ExpenseNotificationPort expenseNotificationPort;
 
     @InjectMocks
     private CommandMonthlyExpenseService commandMonthlyExpenseService;
@@ -95,15 +98,15 @@ public class CommandMonthExpenseServiceTest {
     }
 
     @Test
-    void updateMonthlyExpense_whenExpenseExistsAndPreviousIsNull_shouldSaveWithZeroChangePercentage() {
+    void updateMonthlyExpense_whenExpenseExists_shouldSaveWithDiffDelta() {
         // Given
         BigDecimal currentTotalAmount = BigDecimal.valueOf(1000);
-        MonthlyExpense existingExpense = MonthlyExpense.builder()
+        MonthlyExpenseAnalysis existingExpense = 
+                 MonthlyExpenseAnalysis.builder()
                 .userId(userId)
                 .month(month)
                 .year(year)
                 .totalAmount(currentTotalAmount)
-                .previousTotalAmount(null) // previous is null
                 .build();
 
         when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(existingExpense);
@@ -116,79 +119,13 @@ public class CommandMonthExpenseServiceTest {
         verify(monthlyExpenseRepositoryPort).saveMonthlyExpense(captor.capture());
 
         MonthlyExpense savedExpense = captor.getValue();
-        // The service passes the difference (newAmount - oldAmount) as totalAmount
+        // The service passes the difference (newAmount - oldAmount) as totalAmount delta for upsert
         BigDecimal expectedDiff = newAmount.subtract(oldAmount); 
         assertEquals(expectedDiff.doubleValue(), savedExpense.getTotalAmount().doubleValue());
-        
-        // Since previousTotal is null -> 0, changePercentage should be 0
-        assertEquals(BigDecimal.ZERO.doubleValue(), savedExpense.getChangePercentage().doubleValue());
     }
 
     @Test
-    void updateMonthlyExpense_whenExpenseExistsAndPreviousIsZero_shouldSaveWithZeroChangePercentage() {
-        // Given
-        BigDecimal currentTotalAmount = BigDecimal.valueOf(1000);
-        MonthlyExpense existingExpense = MonthlyExpense.builder()
-                .userId(userId)
-                .month(month)
-                .year(year)
-                .totalAmount(currentTotalAmount)
-                .previousTotalAmount(BigDecimal.ZERO) // previous is 0
-                .build();
-
-        when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(existingExpense);
-
-        // When
-        commandMonthlyExpenseService.updateMonthlyExpense(updateCommand);
-
-        // Then
-        ArgumentCaptor<MonthlyExpense> captor = ArgumentCaptor.forClass(MonthlyExpense.class);
-        verify(monthlyExpenseRepositoryPort).saveMonthlyExpense(captor.capture());
-
-        MonthlyExpense savedExpense = captor.getValue();
-        BigDecimal expectedDiff = newAmount.subtract(oldAmount);
-        assertEquals(expectedDiff.doubleValue(), savedExpense.getTotalAmount().doubleValue());
-        
-        // Since previousTotal is 0, changePercentage should be 0
-        assertEquals(BigDecimal.ZERO.doubleValue(), savedExpense.getChangePercentage().doubleValue());
-    }
-
-    @Test
-    void updateMonthlyExpense_whenExpenseExistsAndNewAmountIsHigher_shouldSaveWithCorrectPercentage() {
-        // Given
-        BigDecimal currentTotalAmount = BigDecimal.valueOf(1000); // including the old 100
-        BigDecimal previousTotalAmount = BigDecimal.valueOf(800);
-        MonthlyExpense existingExpense = MonthlyExpense.builder()
-                .userId(userId)
-                .month(month)
-                .year(year)
-                .totalAmount(currentTotalAmount)
-                .previousTotalAmount(previousTotalAmount)
-                .build();
-
-        when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(existingExpense);
-
-        // When
-        commandMonthlyExpenseService.updateMonthlyExpense(updateCommand);
-
-        // Then
-        ArgumentCaptor<MonthlyExpense> captor = ArgumentCaptor.forClass(MonthlyExpense.class);
-        verify(monthlyExpenseRepositoryPort).saveMonthlyExpense(captor.capture());
-
-        MonthlyExpense savedExpense = captor.getValue();
-        
-        BigDecimal expectedDiff = newAmount.subtract(oldAmount); // 150 - 100 = 50
-        assertEquals(expectedDiff.doubleValue(), savedExpense.getTotalAmount().doubleValue());
-        
-        // newTotal = 1000 + 50 = 1050
-        // prevTotal = 800
-        // percentage = (1050 - 800) / 800 * 100 = 250 / 800 * 100 = 31.2500
-        BigDecimal expectedPercentage = BigDecimal.valueOf(31.25).setScale(4);
-        assertEquals(expectedPercentage.doubleValue(), savedExpense.getChangePercentage().doubleValue());
-    }
-
-    @Test
-    void updateMonthlyExpense_whenExpenseExistsAndNewAmountIsLower_shouldSaveWithCorrectPercentageAndNegativeDiff() {
+    void updateMonthlyExpense_whenExpenseExistsAndNewAmountIsLower_shouldSaveWithNegativeDiff() {
         // Given
         updateCommand = new UpdateExpenseCommand(
                 userId,
@@ -198,13 +135,12 @@ public class CommandMonthExpenseServiceTest {
         );
 
         BigDecimal currentTotalAmount = BigDecimal.valueOf(1000); 
-        BigDecimal previousTotalAmount = BigDecimal.valueOf(800);
-        MonthlyExpense existingExpense = MonthlyExpense.builder()
+        MonthlyExpenseAnalysis existingExpense = 
+                 MonthlyExpenseAnalysis.builder()
                 .userId(userId)
                 .month(month)
                 .year(year)
                 .totalAmount(currentTotalAmount)
-                .previousTotalAmount(previousTotalAmount)
                 .build();
 
         when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(existingExpense);
@@ -221,12 +157,6 @@ public class CommandMonthExpenseServiceTest {
         // diff = 50 - 200 = -150
         BigDecimal expectedDiff = BigDecimal.valueOf(-150); 
         assertEquals(expectedDiff.doubleValue(), savedExpense.getTotalAmount().doubleValue());
-        
-        // newTotal = 1000 + (-150) = 850
-        // prevTotal = 800
-        // percentage = (850 - 800) / 800 * 100 = 50 / 800 * 100 = 6.2500
-        BigDecimal expectedPercentage = BigDecimal.valueOf(6.25).setScale(4);
-        assertEquals(expectedPercentage.doubleValue(), savedExpense.getChangePercentage().doubleValue());
     }
 
     @Test
@@ -242,73 +172,15 @@ public class CommandMonthExpenseServiceTest {
     }
 
     @Test
-    void deductExpense_whenExpenseExistsAndPreviousIsNull_shouldSaveWithZeroChangePercentage() {
-        // Given
-        BigDecimal currentTotalAmount = BigDecimal.valueOf(1000);
-        MonthlyExpense existingExpense = MonthlyExpense.builder()
-                .userId(userId)
-                .month(month)
-                .year(year)
-                .totalAmount(currentTotalAmount)
-                .previousTotalAmount(null) // previous is null
-                .build();
-
-        when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(existingExpense);
-
-        // When
-        commandMonthlyExpenseService.deductExpense(deductCommand);
-
-        // Then
-        ArgumentCaptor<MonthlyExpense> captor = ArgumentCaptor.forClass(MonthlyExpense.class);
-        verify(monthlyExpenseRepositoryPort).saveMonthlyExpense(captor.capture());
-
-        MonthlyExpense savedExpense = captor.getValue();
-        // The service passes the negative deductAmount
-        assertEquals(deductAmount.negate().doubleValue(), savedExpense.getTotalAmount().doubleValue());
-        
-        // Since previousTotal is null -> 0, changePercentage should be 0
-        assertEquals(BigDecimal.ZERO.doubleValue(), savedExpense.getChangePercentage().doubleValue());
-    }
-
-    @Test
-    void deductExpense_whenExpenseExistsAndPreviousIsZero_shouldSaveWithZeroChangePercentage() {
-        // Given
-        BigDecimal currentTotalAmount = BigDecimal.valueOf(1000);
-        MonthlyExpense existingExpense = MonthlyExpense.builder()
-                .userId(userId)
-                .month(month)
-                .year(year)
-                .totalAmount(currentTotalAmount)
-                .previousTotalAmount(BigDecimal.ZERO) // previous is 0
-                .build();
-
-        when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(existingExpense);
-
-        // When
-        commandMonthlyExpenseService.deductExpense(deductCommand);
-
-        // Then
-        ArgumentCaptor<MonthlyExpense> captor = ArgumentCaptor.forClass(MonthlyExpense.class);
-        verify(monthlyExpenseRepositoryPort).saveMonthlyExpense(captor.capture());
-
-        MonthlyExpense savedExpense = captor.getValue();
-        assertEquals(deductAmount.negate().doubleValue(), savedExpense.getTotalAmount().doubleValue());
-        
-        // Since previousTotal is 0, changePercentage should be 0
-        assertEquals(BigDecimal.ZERO.doubleValue(), savedExpense.getChangePercentage().doubleValue());
-    }
-
-    @Test
-    void deductExpense_whenExpenseExists_shouldSaveWithCorrectPercentageAndNegativeDelta() {
+    void deductExpense_whenExpenseExists_shouldSaveWithNegativeDelta() {
         // Given
         BigDecimal currentTotalAmount = BigDecimal.valueOf(1000); 
-        BigDecimal previousTotalAmount = BigDecimal.valueOf(800);
-        MonthlyExpense existingExpense = MonthlyExpense.builder()
+        MonthlyExpenseAnalysis existingExpense = 
+                 MonthlyExpenseAnalysis.builder()
                 .userId(userId)
                 .month(month)
                 .year(year)
                 .totalAmount(currentTotalAmount)
-                .previousTotalAmount(previousTotalAmount)
                 .build();
 
         when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(existingExpense);
@@ -323,23 +195,12 @@ public class CommandMonthExpenseServiceTest {
         MonthlyExpense savedExpense = captor.getValue();
         
         assertEquals(deductAmount.negate().doubleValue(), savedExpense.getTotalAmount().doubleValue());
-        
-        // deductAmount = 100
-        // newTotal = 1000 - 100 = 900
-        // prevTotal = 800
-        // percentage = (900 - 800) / 800 * 100 = 100 / 800 * 100 = 12.5000
-        BigDecimal expectedPercentage = BigDecimal.valueOf(12.50).setScale(4);
-        assertEquals(expectedPercentage.doubleValue(), savedExpense.getChangePercentage().doubleValue());
     }
 
     @Test
-    void recordMonthlyExpense_whenExistingIsNullAndPreviousIsNull_shouldSaveNewRecord() {
+    void recordMonthlyExpense_whenExistingIsNull_shouldSaveNewRecord() {
         // Given
-        int prevMonth = month == 1 ? 12 : month - 1;
-        int prevYear = month == 1 ? year - 1 : year;
-        
         when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(null);
-        when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, prevMonth, prevYear)).thenReturn(null);
 
         // When
         commandMonthlyExpenseService.recordMonthlyExpense(recordCommand);
@@ -353,45 +214,19 @@ public class CommandMonthExpenseServiceTest {
         assertEquals(userId, savedExpense.getUserId());
         assertEquals(month, savedExpense.getMonth());
         assertEquals(year, savedExpense.getYear());
-    }
 
-    @Test
-    void recordMonthlyExpense_whenExistingIsNullAndPreviousExists_shouldSaveNewRecordWithPrevious() {
-        // Given
-        int prevMonth = month == 1 ? 12 : month - 1;
-        int prevYear = month == 1 ? year - 1 : year;
-        
-        MonthlyExpense previousExpense = MonthlyExpense.builder()
-                .userId(userId)
-                .month(prevMonth)
-                .year(prevYear)
-                .totalAmount(BigDecimal.valueOf(800))
-                .build();
-                
-        when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(null);
-        when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, prevMonth, prevYear)).thenReturn(previousExpense);
-
-        // When
-        commandMonthlyExpenseService.recordMonthlyExpense(recordCommand);
-
-        // Then
-        ArgumentCaptor<MonthlyExpense> captor = ArgumentCaptor.forClass(MonthlyExpense.class);
-        verify(monthlyExpenseRepositoryPort).saveMonthlyExpense(captor.capture());
-
-        MonthlyExpense savedExpense = captor.getValue();
-        assertEquals(recordAmount.doubleValue(), savedExpense.getTotalAmount().doubleValue());
-        assertEquals(BigDecimal.valueOf(800).doubleValue(), savedExpense.getPreviousTotalAmount().doubleValue());
+        verify(expenseNotificationPort).sendExpenseNotification(eq(userId),any());
     }
 
     @Test
     void recordMonthlyExpense_whenExistingExists_shouldUpdateAndSave() {
         // Given
-        MonthlyExpense existingExpense = MonthlyExpense.builder()
+        MonthlyExpenseAnalysis existingExpense = 
+                 MonthlyExpenseAnalysis.builder()
                 .userId(userId)
                 .month(month)
                 .year(year)
                 .totalAmount(BigDecimal.valueOf(1000))
-                .previousTotalAmount(BigDecimal.valueOf(800))
                 .build();
                 
         when(monthlyExpenseRepositoryPort.findByUserIdAndMonth(userId, month, year)).thenReturn(existingExpense);
@@ -406,12 +241,8 @@ public class CommandMonthExpenseServiceTest {
         MonthlyExpense savedExpense = captor.getValue();
         // The service passes the DELTA as totalAmount
         assertEquals(recordAmount.doubleValue(), savedExpense.getTotalAmount().doubleValue());
-        
-        // previousTotal = 800
-        // currentTotal before save = 1000, newTotal = 1100
-        // percentage = (1100 - 800) / 800 * 100 = 300 / 800 * 100 = 37.5
-        BigDecimal expectedPercentage = BigDecimal.valueOf(37.5).setScale(4);
-        assertEquals(expectedPercentage.doubleValue(), savedExpense.getChangePercentage().doubleValue());
+        verify(expenseNotificationPort).sendExpenseNotification(eq(userId),any());
+
     }
 
     @Test
@@ -444,16 +275,11 @@ public class CommandMonthExpenseServiceTest {
                 .month(6)
                 .year(2024)
                 .totalAmount(BigDecimal.valueOf(1000))
-                .previousTotalAmount(BigDecimal.valueOf(800))
                 .build();
                 
         // Return only June in the bulk fetch
         when(monthlyExpenseRepositoryPort.findAllByUserIdAndMonthYearPairs(eq(userId), any()))
                 .thenReturn(List.of(existingJune));
-
-        // When July is missing, it will fetch June as the previous month
-        // In the code: existingMap will have { "6_2024": existingJune }
-        // For July, it checks if prevMonth (June) is in the existingMap. It is, so no extra DB call should occur.
 
         // When
         commandMonthlyExpenseService.recordMonthlyExpenses(commands);
@@ -474,7 +300,9 @@ public class CommandMonthExpenseServiceTest {
         MonthlyExpense savedJuly = savedList.stream().filter(e -> e.getMonth() == 7).findFirst().get();
         assertEquals(userId, savedJuly.getUserId());
         assertEquals(BigDecimal.valueOf(150).doubleValue(), savedJuly.getTotalAmount().doubleValue()); // delta (150)
-        // July's previous amount should inherit from existingJune (1000 prior to these updates)
-        assertEquals(BigDecimal.valueOf(1000).doubleValue(), savedJuly.getPreviousTotalAmount().doubleValue());
+
+        // Verify notifications sent for both months
+        verify(expenseNotificationPort, times(2)).sendExpenseNotification(eq(userId),any());
+
     }
 }

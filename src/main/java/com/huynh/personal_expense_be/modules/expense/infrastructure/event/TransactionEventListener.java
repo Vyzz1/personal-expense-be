@@ -34,8 +34,8 @@ public class TransactionEventListener {
         log.info("Handling TransactionCreatedEvent for transactionId={}, userId={}",
                 event.transactionId(), event.userId());
 
-        recordMonthlyExpenseUseCase.recordMonthlyExpense(
-                new RecordExpenseCommand(event.userId(), event.amount(), event.occurredAt())
+        recordMonthlyExpenseUseCase.recordMonthlyExpenses(
+                List.of(new RecordExpenseCommand(event.userId(), event.amount(), event.occurredAt()))
         );
     }
 

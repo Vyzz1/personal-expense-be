@@ -1,6 +1,6 @@
 package com.huynh.personal_expense_be.modules.expense.application.dto;
 
-import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpense;
+import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpenseAnalysis;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -14,7 +14,7 @@ public record GetMonthlyExpenseResponse(
          int year
 ) {
 
-    public static GetMonthlyExpenseResponse of(MonthlyExpense monthlyExpense) {
+    public static GetMonthlyExpenseResponse of(MonthlyExpenseAnalysis monthlyExpense) {
         return new GetMonthlyExpenseResponse(
                 monthlyExpense.getTotalAmount(),
                 monthlyExpense.getPreviousTotalAmount(),

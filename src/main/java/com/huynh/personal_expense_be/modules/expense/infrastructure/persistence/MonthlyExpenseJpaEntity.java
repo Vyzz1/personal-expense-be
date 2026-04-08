@@ -38,11 +38,6 @@ public class MonthlyExpenseJpaEntity extends BaseEntity {
     @Column(nullable = false,name = "total_amount",columnDefinition = "DECIMAL(19, 4)")
     private BigDecimal totalAmount;
 
-    @Column(name = "previous_total_amount", columnDefinition = "DECIMAL(19, 4)")
-    private BigDecimal previousTotalAmount;
-
-    @Column(name = "change_percentage", columnDefinition = "DECIMAL(5, 2)")
-    private BigDecimal changePercentage;
 
 
 }

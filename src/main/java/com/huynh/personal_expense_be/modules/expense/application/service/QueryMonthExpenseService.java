@@ -6,7 +6,8 @@ import com.huynh.personal_expense_be.modules.expense.application.dto.GetThreeMon
 import com.huynh.personal_expense_be.modules.expense.application.port.in.GetMonthlyExpenseUseCase;
 import com.huynh.personal_expense_be.modules.expense.application.port.in.GetThreeMonthCompareUseCase;
 import com.huynh.personal_expense_be.modules.expense.application.port.out.MonthlyExpenseRepositoryPort;
-import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpense;
+import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpenseAnalysis;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class QueryMonthExpenseService implements GetMonthlyExpenseUseCase, GetTh
         int month = command.month();
         int year = command.year();
 
-        MonthlyExpense monthlyExpense = monthlyExpenseRepositoryPort.findByUserIdAndMonth(command.userId(), month, year);
+        MonthlyExpenseAnalysis monthlyExpense = monthlyExpenseRepositoryPort.findByUserIdAndMonth(command.userId(), month, year);
 
         if (monthlyExpense == null) {
             log.info("No MonthlyExpense found for userId: {}, month: {}, year: {}. Returning default response.", command.userId(), month, year);
@@ -51,7 +52,7 @@ public class QueryMonthExpenseService implements GetMonthlyExpenseUseCase, GetTh
         int month = command.month();
         int year = command.year();
 
-        List<MonthlyExpense> expenses = monthlyExpenseRepositoryPort.findThreeMonthCompare(command.userId(), month, year);
+        List<MonthlyExpenseAnalysis> expenses = monthlyExpenseRepositoryPort.findThreeMonthCompare(command.userId(), month, year);
 
         return expenses.stream()
                 .map(GetMonthlyExpenseResponse::of)
