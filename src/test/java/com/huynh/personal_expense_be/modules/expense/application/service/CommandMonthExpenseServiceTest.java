@@ -3,9 +3,6 @@ package com.huynh.personal_expense_be.modules.expense.application.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -14,6 +11,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Collections;
 
+import com.huynh.personal_expense_be.modules.expense.application.port.out.ExpenseNotificationPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
 
 import com.huynh.personal_expense_be.modules.expense.application.dto.UpdateExpenseCommand;
 import com.huynh.personal_expense_be.modules.expense.application.dto.DeductExpenseCommand;
@@ -35,6 +34,9 @@ public class CommandMonthExpenseServiceTest {
 
     @Mock
     private MonthlyExpenseRepositoryPort monthlyExpenseRepositoryPort;
+
+    @Mock
+    private ExpenseNotificationPort expenseNotificationPort;
 
     @InjectMocks
     private CommandMonthlyExpenseService commandMonthlyExpenseService;
@@ -353,6 +355,8 @@ public class CommandMonthExpenseServiceTest {
         assertEquals(userId, savedExpense.getUserId());
         assertEquals(month, savedExpense.getMonth());
         assertEquals(year, savedExpense.getYear());
+
+        verify(expenseNotificationPort).sendExpenseNotification(eq(userId),any());
     }
 
     @Test
@@ -381,6 +385,9 @@ public class CommandMonthExpenseServiceTest {
         MonthlyExpense savedExpense = captor.getValue();
         assertEquals(recordAmount.doubleValue(), savedExpense.getTotalAmount().doubleValue());
         assertEquals(BigDecimal.valueOf(800).doubleValue(), savedExpense.getPreviousTotalAmount().doubleValue());
+
+        verify(expenseNotificationPort).sendExpenseNotification(eq(userId),any());
+
     }
 
     @Test
@@ -412,6 +419,9 @@ public class CommandMonthExpenseServiceTest {
         // percentage = (1100 - 800) / 800 * 100 = 300 / 800 * 100 = 37.5
         BigDecimal expectedPercentage = BigDecimal.valueOf(37.5).setScale(4);
         assertEquals(expectedPercentage.doubleValue(), savedExpense.getChangePercentage().doubleValue());
+
+        verify(expenseNotificationPort).sendExpenseNotification(eq(userId),any());
+
     }
 
     @Test
@@ -476,5 +486,9 @@ public class CommandMonthExpenseServiceTest {
         assertEquals(BigDecimal.valueOf(150).doubleValue(), savedJuly.getTotalAmount().doubleValue()); // delta (150)
         // July's previous amount should inherit from existingJune (1000 prior to these updates)
         assertEquals(BigDecimal.valueOf(1000).doubleValue(), savedJuly.getPreviousTotalAmount().doubleValue());
+
+        // Verify notifications sent for both months
+        verify(expenseNotificationPort, times(2)).sendExpenseNotification(eq(userId),any());
+
     }
 }
