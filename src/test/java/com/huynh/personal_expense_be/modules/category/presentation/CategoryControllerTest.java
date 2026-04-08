@@ -5,6 +5,8 @@ import com.huynh.personal_expense_be.modules.category.application.port.in.*;
 import com.huynh.personal_expense_be.modules.category.presentation.request.CreateCategoryRequest;
 import com.huynh.personal_expense_be.modules.category.presentation.request.UpdateCategoryRequest;
 
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import tools.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +23,7 @@ import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -126,8 +129,12 @@ public class CategoryControllerTest {
 
         when(getCategoryAnalysisUseCase.getCategoryAnalysis(command)).thenReturn(List.of(analysisResponse));
 
+        MultiValueMap<String, String> params =  new LinkedMultiValueMap<>();
+        params.add("month", "10");
+        params.add("year", "2023");
+
         mockMvc.perform(get("/api/v1/categories/analysis")
-                .principal(mockPrincipal))
+                .principal(mockPrincipal).params(params))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Category analysis retrieved successfully"))
                 .andExpect(jsonPath("$.data[0].id").value(categoryId.toString()))
