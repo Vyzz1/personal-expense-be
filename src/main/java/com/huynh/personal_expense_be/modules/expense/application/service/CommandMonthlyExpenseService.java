@@ -5,13 +5,17 @@ import com.huynh.personal_expense_be.modules.expense.application.port.in.DeductM
 import com.huynh.personal_expense_be.modules.expense.application.port.in.RecordMonthlyExpenseUseCase;
 import com.huynh.personal_expense_be.modules.expense.application.port.in.UpdateMonthlyExpenseUseCase;
 import com.huynh.personal_expense_be.modules.expense.application.port.out.MonthlyExpenseRepositoryPort;
+import com.huynh.personal_expense_be.modules.expense.application.port.out.ExpenseNotificationPort;
 import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpense;
+import com.huynh.personal_expense_be.shared.dto.SseNotificationEventType;
+import com.huynh.personal_expense_be.shared.dto.SseNotificationMessage;
 import com.huynh.personal_expense_be.shared.utility.Utility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,6 +26,7 @@ import java.util.stream.Collectors;
 public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase, DeductMonthlyExpenseUseCase, UpdateMonthlyExpenseUseCase {
 
     private final MonthlyExpenseRepositoryPort monthlyExpenseRepositoryPort;
+    private final ExpenseNotificationPort expenseNotificationPort;
 
     @Override
     public void recordMonthlyExpense(RecordExpenseCommand command) {
@@ -65,6 +70,7 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
         }
 
         monthlyExpenseRepositoryPort.saveMonthlyExpense(toUpsert);
+        notifyExpenseCalculated(command.userId(), month, year);
     }
 
     /**
@@ -166,6 +172,15 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
 
         // ── Step 3: single bulk save ─────────────────────────────────────────
         monthlyExpenseRepositoryPort.saveAllMonthlyExpenses(toSave);
+        
+        // Notify users
+        for (Map.Entry<String, List<Key>> entry : byUser.entrySet()) {
+            String userId = entry.getKey();
+            for (Key key : entry.getValue()) {
+                notifyExpenseCalculated(userId, key.month(), key.year());
+            }
+        }
+        
         log.info("recordMonthlyExpenses: saved {} MonthlyExpense records", toSave.size());
     }
 
@@ -201,6 +216,7 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
                 .build();
 
         monthlyExpenseRepositoryPort.saveMonthlyExpense(toUpsert);
+        notifyExpenseCalculated(command.userId(), month, year);
     }
 
     @Override
@@ -236,6 +252,19 @@ public class CommandMonthlyExpenseService implements RecordMonthlyExpenseUseCase
                 .build();
 
         monthlyExpenseRepositoryPort.saveMonthlyExpense(toUpsert);
+        notifyExpenseCalculated(command.userId(), month, year);
+    }
+
+    private void notifyExpenseCalculated(String userId, int month, int year) {
+        String message = String.format("Monthly expense for %02d/%d has been updated.", month, year);
+        SseNotificationMessage notificationMsg = SseNotificationMessage.builder()
+                .id(UUID.randomUUID().toString())
+                .eventType(SseNotificationEventType.EXPENSE_CALCULATED)
+                .message(message)
+                .description("Your aggregated expenses for the specified month have finished calculating.")
+                .timestamp(Instant.now())
+                .build();
+        expenseNotificationPort.sendExpenseNotification(userId, notificationMsg);
     }
 
 }
