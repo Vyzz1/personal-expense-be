@@ -2,8 +2,10 @@ package com.huynh.personal_expense_be.modules.expense.infrastructure.persistence
 
 import com.huynh.personal_expense_be.modules.expense.application.port.out.MonthlyExpenseRepositoryPort;
 import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpense;
+import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpenseAnalysis;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Tuple;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +16,9 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -28,13 +32,12 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
 
     private static final String UPSERT_SQL = """
             INSERT INTO monthly_expenses
-            (id, user_id, month, year, total_amount, previous_total_amount, change_percentage, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            (id, user_id, month, year, total_amount, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT (user_id, month, year)
             DO UPDATE SET
                 total_amount = monthly_expenses.total_amount + EXCLUDED.total_amount,
-                previous_total_amount = EXCLUDED.previous_total_amount,
-                change_percentage = EXCLUDED.change_percentage
+                updated_at = CURRENT_TIMESTAMP
             """;
 
     @PersistenceContext
@@ -72,8 +75,6 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
                     ps.setInt(3, me.getMonth());
                     ps.setInt(4, me.getYear());
                     ps.setBigDecimal(5, me.getTotalAmount());
-                    ps.setBigDecimal(6, me.getPreviousTotalAmount());
-                    ps.setBigDecimal(7, me.getChangePercentage());
                     ps.addBatch();
                 }
                 ps.executeBatch();
@@ -119,30 +120,72 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
     }
 
     @Transactional(readOnly = true)
+    @SuppressWarnings("unchecked")
     @Override
-    public MonthlyExpense findByUserIdAndMonth(String userId, int month, int year) {
+    public MonthlyExpenseAnalysis findByUserIdAndMonth(String userId, int month, int year) {
         log.info("Finding MonthlyExpense for userId: {}, month: {}, year: {}", userId, month, year);
-        List<MonthlyExpenseJpaEntity> results = entityManager
-                .createQuery(
-                        "SELECT m FROM MonthlyExpenseJpaEntity m WHERE m.userId = :userId AND m.month = :month AND m.year = :year AND m.isDeleted IS NULL ",
-                        MonthlyExpenseJpaEntity.class)
+
+        List<Tuple> rows = entityManager.createNativeQuery("""
+               SELECT
+                    t.id AS id,
+                    t.user_id AS user_id,
+                    CAST(t.month AS INTEGER) AS month,
+                    CAST(t.year AS INTEGER) AS year,
+                    t.total_amount AS total_amount,
+                    t.updated_at AS updated_at,
+                CASE 
+                    WHEN t.prev_year = t.year AND t.prev_month = t.month - 1 THEN t.raw_prev_total
+                    WHEN t.prev_year = t.year - 1 AND t.month = 1 AND t.prev_month = 12 THEN t.raw_prev_total
+                    ELSE 0 
+                END AS previous_total_amount,
+                CASE
+                    WHEN (CASE 
+                            WHEN t.prev_year = t.year AND t.prev_month = t.month - 1 THEN t.raw_prev_total
+                            WHEN t.prev_year = t.year - 1 AND t.month = 1 AND t.prev_month = 12 THEN t.raw_prev_total
+                            ELSE 0 
+                        END) = 0 THEN 0
+                    ELSE (t.total_amount - t.raw_prev_total) / t.raw_prev_total * 100
+                END AS change_percentage
+            FROM (
+                SELECT
+                    id, user_id, month, year, total_amount, updated_at,
+                    LAG(total_amount) OVER (PARTITION BY user_id ORDER BY year, month) AS raw_prev_total,
+                    LAG(month) OVER (PARTITION BY user_id ORDER BY year, month) AS prev_month,
+                    LAG(year) OVER (PARTITION BY user_id ORDER BY year, month) AS prev_year
+                FROM monthly_expenses
+                WHERE user_id = :userId
+            ) t
+            WHERE t.month = :month AND t.year = :year
+                """, Tuple.class)
                 .setParameter("userId", userId)
                 .setParameter("month", month)
                 .setParameter("year", year)
                 .setMaxResults(1)
                 .getResultList();
 
-        MonthlyExpenseJpaEntity entity = results.isEmpty() ? null : results.get(0);
-
-        if (entity == null)
+        if (rows.isEmpty()) {
+            log.info("No MonthlyExpense found for userId: {}, month: {}, year: {}. Returning null.", userId, month, year);
             return null;
+        }
 
-        return monthlyExpenseMapper.toDomain(entity);
+        return  rows.stream()
+                .map(row -> MonthlyExpenseAnalysis.builder()
+                        .id(row.get(0, UUID.class))
+                        .userId(row.get(1, String.class))
+                        .month(row.get(2, Integer.class))
+                        .year(row.get(3, Integer.class))
+                        .totalAmount(row.get(4, BigDecimal.class))
+                        .updatedAt(row.get(5, Instant.class))
+                        .previousTotalAmount(row.get(6, BigDecimal.class))
+                        .changePercentage(row.get(7, BigDecimal.class))
+                        .build())
+                .findFirst()
+                .orElse(null);
     }
 
     @Transactional(readOnly = true)
     @Override
-    public List<MonthlyExpense> findThreeMonthCompare(String userId, int month, int year) {
+    public List<MonthlyExpenseAnalysis> findThreeMonthCompare(String userId, int month, int year) {
         // Build list of (month, year) for current and 2 preceding months
         List<Integer> months = new java.util.ArrayList<>();
         List<Integer> years = new java.util.ArrayList<>();
@@ -157,24 +200,61 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
             }
         }
 
-        List<MonthlyExpenseJpaEntity> results = entityManager
-                .createQuery(
-                        "SELECT me FROM MonthlyExpenseJpaEntity me " +
-                                "WHERE me.userId = :userId " +
-                                "AND me.isDeleted IS NULL " +
-                                "AND ((me.month = :m0 AND me.year = :y0) " +
-                                "  OR (me.month = :m1 AND me.year = :y1) " +
-                                "  OR (me.month = :m2 AND me.year = :y2)) " +
-                                "ORDER BY me.year DESC, me.month DESC",
-                        MonthlyExpenseJpaEntity.class)
+        @SuppressWarnings("unchecked")
+        List<Tuple> rows = (List<Tuple>) entityManager
+                .createNativeQuery("""
+                         SELECT
+                                t.id AS id,
+                                t.user_id AS user_id,
+                                CAST(t.month AS INTEGER) AS month,
+                                CAST(t.year AS INTEGER) AS year,
+                                t.total_amount AS total_amount,
+                                t.updated_at AS updated_at,
+                            CASE 
+                                WHEN t.prev_year = t.year AND t.prev_month = t.month - 1 THEN t.raw_prev_total
+                                WHEN t.prev_year = t.year - 1 AND t.month = 1 AND t.prev_month = 12 THEN t.raw_prev_total
+                                ELSE 0 
+                            END AS previous_total_amount,
+                            CASE
+                                WHEN (CASE 
+                                        WHEN t.prev_year = t.year AND t.prev_month = t.month - 1 THEN t.raw_prev_total
+                                        WHEN t.prev_year = t.year - 1 AND t.month = 1 AND t.prev_month = 12 THEN t.raw_prev_total
+                                        ELSE 0 
+                                    END) = 0 THEN 0
+                                ELSE (t.total_amount - t.raw_prev_total) / t.raw_prev_total * 100
+                            END AS change_percentage
+                        FROM (
+                            SELECT
+                                id, user_id, month, year, total_amount, updated_at,
+                                LAG(total_amount) OVER (PARTITION BY user_id ORDER BY year, month) AS raw_prev_total,
+                                LAG(month) OVER (PARTITION BY user_id ORDER BY year, month) AS prev_month,
+                                LAG(year) OVER (PARTITION BY user_id ORDER BY year, month) AS prev_year
+                            FROM monthly_expenses
+                            WHERE user_id = :userId
+                        ) t
+                        WHERE (t.month = :m0 AND t.year = :y0)
+                           OR (t.month = :m1 AND t.year = :y1)
+                           OR (t.month = :m2 AND t.year = :y2)
+                        ORDER BY t.year ASC, t.month ASC
+                        """, Tuple.class)
                 .setParameter("userId", userId)
                 .setParameter("m0", months.get(0)).setParameter("y0", years.get(0))
                 .setParameter("m1", months.get(1)).setParameter("y1", years.get(1))
                 .setParameter("m2", months.get(2)).setParameter("y2", years.get(2))
                 .getResultList();
+        
+       return rows.stream()
+                .map(row -> MonthlyExpenseAnalysis.builder()
+                        .id(row.get(0, UUID.class))
+                        .userId(row.get(1, String.class))
+                        .month(row.get(2, Integer.class))
+                        .year(row.get(3, Integer.class))
+                        .totalAmount(row.get(4, BigDecimal.class))
+                        .updatedAt(row.get(5, Instant.class))
+                        .previousTotalAmount(row.get(6, BigDecimal.class))
+                        .changePercentage(row.get(7, BigDecimal.class))
+                        .build())
+                .collect(Collectors.toList());
 
-        return results.stream()
-                .map(monthlyExpenseMapper::toDomain)
-                .toList();
     }
 }

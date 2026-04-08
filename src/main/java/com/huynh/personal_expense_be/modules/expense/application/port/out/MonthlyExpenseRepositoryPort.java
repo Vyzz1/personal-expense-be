@@ -1,6 +1,7 @@
 package com.huynh.personal_expense_be.modules.expense.application.port.out;
 
 import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpense;
+import com.huynh.personal_expense_be.modules.expense.domain.MonthlyExpenseAnalysis;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ public interface MonthlyExpenseRepositoryPort {
 
     List<MonthlyExpense> saveAllMonthlyExpenses(List<MonthlyExpense> monthlyExpenses);
 
-    MonthlyExpense findByUserIdAndMonth(String userId, int month, int year);
+    MonthlyExpenseAnalysis findByUserIdAndMonth(String userId, int month, int year);
 
     /**
      * Bulk-fetch MonthlyExpense records matching any of the given (month, year) pairs for a single userId.
@@ -18,6 +19,6 @@ public interface MonthlyExpenseRepositoryPort {
      */
     List<MonthlyExpense> findAllByUserIdAndMonthYearPairs(String userId, List<int[]> monthYearPairs);
 
-    List<MonthlyExpense> findThreeMonthCompare(String userId, int month, int year);
+    List<MonthlyExpenseAnalysis> findThreeMonthCompare(String userId, int month, int year);
 
 }
