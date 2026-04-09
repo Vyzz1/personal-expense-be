@@ -13,12 +13,13 @@ import com.huynh.personal_expense_be.modules.transaction.domain.TransactionType;
 import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionCreatedEvent;
 import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionDeletedEvent;
 import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionUpdatedEvent;
+import com.huynh.personal_expense_be.shared.application.port.out.OutboxRepositoryPort;
 import com.huynh.personal_expense_be.shared.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -29,7 +30,7 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
 
     private final CategoryRepositoryPort categoryRepositoryPort;
     private final TransactionRepositoryPort transactionRepositoryPort;
-    private final ApplicationEventPublisher eventPublisher;
+    private final OutboxRepositoryPort outboxRepositoryPort;
 
     @Override
     @Transactional
@@ -49,14 +50,16 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
                 .build();
 
         Transaction saved = transactionRepositoryPort.save(transaction);
-
-        eventPublisher.publishEvent(new TransactionCreatedEvent(
+        
+        TransactionCreatedEvent createdEvent = new TransactionCreatedEvent(
                 saved.getId(),
                 saved.getUserId(),
                 saved.getCategory().getId(),
                 saved.getAmount(),
                 saved.getOccurredAt()
-        ));
+        );
+
+        outboxRepositoryPort.saveOutboxMessage(createdEvent, Transaction.class.getSimpleName());
 
         return TransactionResponse.from(saved);
     }
@@ -89,11 +92,13 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
         }
         transactionRepositoryPort.deleteById(transactionId);
 
-        eventPublisher.publishEvent(new TransactionDeletedEvent(
+        TransactionDeletedEvent deletedEvent = new TransactionDeletedEvent(
                 transaction.getUserId(),
                 transaction.getAmount(),
                 transaction.getOccurredAt()
-        ));
+        );
+
+        outboxRepositoryPort.saveOutboxMessage(deletedEvent, Transaction.class.getSimpleName());
     }
 
     @Override
@@ -109,7 +114,7 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
         Category category =  categoryRepositoryPort.findById(command.categoryId())
                 .orElseThrow(() -> new NotFoundException("Category not found with id: " + command.categoryId()));
 
-        java.math.BigDecimal oldAmount = transaction.getAmount();
+        BigDecimal oldAmount = transaction.getAmount();
 
         Transaction updated = transaction.toBuilder()
                 .amount(command.amount())
@@ -121,13 +126,14 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
 
         Transaction saved = transactionRepositoryPort.save(updated);
 
-        eventPublisher.publishEvent(new TransactionUpdatedEvent(
+        TransactionUpdatedEvent updateEvent = new TransactionUpdatedEvent(
                 saved.getUserId(),
                 oldAmount,
                 saved.getAmount(),
                 saved.getOccurredAt()
-        ));
+        );
 
+        outboxRepositoryPort.saveOutboxMessage(updateEvent, Transaction.class.getSimpleName());
         return TransactionResponse.from(saved);
     }
 

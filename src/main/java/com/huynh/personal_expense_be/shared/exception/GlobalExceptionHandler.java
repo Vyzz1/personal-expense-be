@@ -9,6 +9,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import org.springframework.context.MessageSourceResolvable;
@@ -133,8 +134,15 @@ public class GlobalExceptionHandler {
             BusinessValidationException ex, HttpServletRequest request) {
 
         return buildValidationResponse(ex.getErrors(), request.getRequestURI());
-    }
 
+}
+
+
+     @ExceptionHandler(AsyncRequestNotUsableException.class)
+     public void handleAsyncRequestExceptions(Exception ex, HttpServletRequest request) {
+         log.error("Async request error on {}: {}", request.getRequestURI(), ex.getMessage());
+        
+     }
     // -------------------------------------------------------------------------
     // Catch-all
     // -------------------------------------------------------------------------
