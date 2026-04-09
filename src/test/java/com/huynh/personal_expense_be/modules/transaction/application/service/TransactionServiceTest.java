@@ -10,6 +10,7 @@ import com.huynh.personal_expense_be.modules.transaction.application.port.out.Tr
 import com.huynh.personal_expense_be.modules.transaction.domain.Transaction;
 import com.huynh.personal_expense_be.modules.transaction.domain.TransactionType;
 import com.huynh.personal_expense_be.modules.transaction.domain.event.TransactionCreatedEvent;
+import com.huynh.personal_expense_be.shared.application.port.out.OutboxRepositoryPort;
 import com.huynh.personal_expense_be.shared.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -41,7 +41,7 @@ public class TransactionServiceTest {
     private TransactionRepositoryPort transactionRepositoryPort;
 
     @Mock
-    private ApplicationEventPublisher applicationEventPublisher;
+    private OutboxRepositoryPort outboxRepositoryPort;
 
     private final String userId = "user-1";
 
@@ -101,7 +101,7 @@ public class TransactionServiceTest {
                 transaction.getOccurredAt()
         );
 
-        verify(applicationEventPublisher).publishEvent(expectedEvent);
+        verify(outboxRepositoryPort).saveOutboxMessage(expectedEvent, Transaction.class.getSimpleName());
 
         assertEquals(command.description(), response.description());
         assertEquals(command.amount(), response.amount());
@@ -149,7 +149,7 @@ public class TransactionServiceTest {
                 transaction.getOccurredAt()
         );
 
-        verify(applicationEventPublisher).publishEvent(expectedEvent);
+        verify(outboxRepositoryPort).saveOutboxMessage(expectedEvent, Transaction.class.getSimpleName());
 
         assertEquals(command.description(), response.description());
         assertEquals(command.amount(), response.amount());
@@ -180,7 +180,7 @@ public class TransactionServiceTest {
         assertEquals("Category not found with id: " + category.getId(), exception.getMessage());
         verify(categoryRepositoryPort).findById(category.getId());
         verify(transactionRepositoryPort, never()).save(any(Transaction.class));
-        verify(applicationEventPublisher, never()).publishEvent(any(TransactionCreatedEvent.class));
+        verify(outboxRepositoryPort, never()).saveOutboxMessage(any(TransactionCreatedEvent.class), any(String.class));
     }
 
     @Test
@@ -210,7 +210,7 @@ public class TransactionServiceTest {
 
         assertEquals("Transaction not found with id: " + transactionId, exception.getMessage());
         verify(transactionRepositoryPort).findById(transactionId);
-        verify(applicationEventPublisher, never()).publishEvent(any());
+        verify(outboxRepositoryPort, never()).saveOutboxMessage(any(), any());
     }
 
     @Test
@@ -235,7 +235,7 @@ public class TransactionServiceTest {
         assertEquals("Transaction not found with id: " + transactionId, exception.getMessage());
         verify(transactionRepositoryPort).findById(transactionId);
         verify(transactionRepositoryPort, never()).deleteById(transactionId);
-        verify(applicationEventPublisher, never()).publishEvent(any());
+        verify(outboxRepositoryPort, never()).saveOutboxMessage(any(), any());
 
     }
 
@@ -259,7 +259,7 @@ public class TransactionServiceTest {
         assertEquals("Transaction not found with id: " + transactionId, exception.getMessage());
         verify(transactionRepositoryPort).findById(transactionId);
         verify(transactionRepositoryPort, never()).deleteById(transactionId);
-        verify(applicationEventPublisher, never()).publishEvent(any());
+        verify(outboxRepositoryPort, never()).saveOutboxMessage(any(), any());
     }
 
     @Test
