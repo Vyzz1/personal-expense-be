@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -17,23 +21,34 @@ import lombok.extern.slf4j.Slf4j;
 public class SseNotificationService {
 
     private final Map<String, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
 
     public SseEmitter subscribe(String userId) {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE); 
+        SseEmitter emitter = new SseEmitter(180000L);
         
         this.emitters.computeIfAbsent(userId, key -> new CopyOnWriteArrayList<>()).add(emitter);
 
-        emitter.onCompletion(() -> removeEmitter(userId, emitter));
-        emitter.onTimeout(() -> removeEmitter(userId, emitter));
-        emitter.onError((e) -> removeEmitter(userId, emitter));
+        ScheduledFuture<?> heartbeatTask = scheduler.scheduleAtFixedRate(() -> {
+            try {
+                emitter.send(SseEmitter.event().name("HEARTBEAT").data("keep-alive"));
+            } catch (Exception e) {
+                this.removeEmitter(userId, emitter, null);
+            }
+        }, 30, 30, TimeUnit.SECONDS);
+
+        emitter.onCompletion(() -> removeEmitter(userId, emitter, heartbeatTask));
+        emitter.onTimeout(() -> removeEmitter(userId, emitter, heartbeatTask));
+        emitter.onError((e) -> removeEmitter(userId, emitter, heartbeatTask));
 
         try {
             emitter.send(SseEmitter.event().name("CONNECT").data("Connected successfully"));
         } catch (Exception e) {
             log.info("Client disconnected immediately upon SSE connection: {} - {}", userId, e.getMessage());
-            removeEmitter(userId, emitter);
+            removeEmitter(userId, emitter, null);
         }
 
+    
         return emitter;
     }
 
@@ -47,20 +62,24 @@ public class SseNotificationService {
                             .data(message));
                 } catch (Exception e) {
                     log.info("Client disconnected or error sending SSE to user: {} - {}", userId, e.getMessage());
-                    removeEmitter(userId, emitter);
+                    removeEmitter(userId, emitter, null);
                 }
             }
         }
     }
 
-    private void removeEmitter(String userId, SseEmitter emitter) {
+    private void removeEmitter(String userId, SseEmitter emitter, ScheduledFuture<?> future) {
+    if (future != null) {
+            future.cancel(false);
+        }
+        
         List<SseEmitter> userEmitters = emitters.get(userId);
         if (userEmitters != null) {
-            log.info("Removing SSE emitter for user: {}", userId);
             userEmitters.remove(emitter);
             if (userEmitters.isEmpty()) {
-                emitters.remove(userId);
+                emitters.remove(userId, userEmitters); 
             }
         }
+        log.info("SSE emitter removed for user: {}", userId);
     }
 }
