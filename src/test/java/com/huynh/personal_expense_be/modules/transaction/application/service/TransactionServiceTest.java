@@ -435,7 +435,7 @@ public class TransactionServiceTest {
     @Test
     void getListTransaction_success() {
         GetTransactionCommand command = new GetTransactionCommand(
-                0, 10, "occurredAt", "desc", userId, null, null, null, null, null, 0, 0
+                0, 10, "occurredAt", "desc", userId, null, null, null, null, null, 0, 0, null, null
         );
 
         PageResult<Transaction> pageResult = PageResult.of(

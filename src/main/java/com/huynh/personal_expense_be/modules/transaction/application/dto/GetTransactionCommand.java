@@ -1,5 +1,6 @@
 package com.huynh.personal_expense_be.modules.transaction.application.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,6 +16,8 @@ public record GetTransactionCommand(
         String fromDate,
         String toDate,
         int month,
-        int year
+        int year,
+        BigDecimal minAmount,
+        BigDecimal maxAmount
 ) {
 }
