@@ -12,13 +12,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
 
       - name: Secret scanning
         uses: trufflesecurity/trufflehog@v3.94.3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          scan_path: ./
-          extra_args: --fail
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --no-update
   test:
     name: JUnit Tests
     runs-on: ubuntu-latest
