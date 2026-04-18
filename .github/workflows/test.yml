@@ -21,7 +21,6 @@ jobs:
           path: ./
           base: main
           head: HEAD
-          extra_args: --no-update
   test:
     name: JUnit Tests
     runs-on: ubuntu-latest
