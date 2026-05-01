@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.util.List;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 @Data
 public class GetTransactionRequest {
@@ -18,4 +19,6 @@ public class GetTransactionRequest {
     private String toDate;
     private int month;
     private int year;
+    private BigDecimal minAmount;
+    private BigDecimal maxAmount;
 }

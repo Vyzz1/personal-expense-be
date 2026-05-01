@@ -144,6 +144,16 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
             countQuery.setParameter("year", command.year());
         }
 
+        if (command.minAmount() != null) {
+            dataQuery.setParameter("minAmount", command.minAmount());
+            countQuery.setParameter("minAmount", command.minAmount());
+        }
+
+        if (command.maxAmount() != null) {
+            dataQuery.setParameter("maxAmount", command.maxAmount());
+            countQuery.setParameter("maxAmount", command.maxAmount());
+        }
+
         int page = command.page();
         int size = command.size() > 0 ? command.size() : 10;
         dataQuery.setFirstResult(page * size);
@@ -181,6 +191,16 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
 
         if (command.month() > 0 && command.year() > 0) {
             where.append(" AND MONTH(t.occurredAt) = :month AND YEAR(t.occurredAt) = :year");
+        }
+
+        log.info("Min & max amount {} {}",command.minAmount(),command.maxAmount());
+
+        if (command.minAmount() != null) {
+            where.append(" AND t.amount >= :minAmount");
+        }
+        
+        if (command.maxAmount() != null) {
+            where.append(" AND t.amount <= :maxAmount");
         }
 
         return where;
