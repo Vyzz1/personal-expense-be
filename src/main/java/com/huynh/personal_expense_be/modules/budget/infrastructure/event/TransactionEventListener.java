@@ -14,7 +14,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
-@Component
+@Component("budgetTransactionEventListener")
 @RequiredArgsConstructor
 public class TransactionEventListener {
 

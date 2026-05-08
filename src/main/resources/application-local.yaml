@@ -21,9 +21,9 @@ spring:
     database: postgresql
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/personal_expense_db
+    url: jdbc:postgresql://localhost:5438/personal_expense
     username: postgres
-    password: postgres
+    password: 123
     driver-class-name: org.postgresql.Driver
 
   batch:

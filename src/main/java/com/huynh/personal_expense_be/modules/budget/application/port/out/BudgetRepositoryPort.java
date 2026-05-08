@@ -20,7 +20,7 @@ public interface BudgetRepositoryPort {
 
     List<Budget> findByUserId(String userId);
 
-    boolean existsById(UUID budgetId);
+    boolean existsOverallByUserId(String userId);
 
     boolean existsByCategoryIdAndUserId(UUID categoryId, String userId);
 }

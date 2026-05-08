@@ -2,10 +2,13 @@ package com.huynh.personal_expense_be.modules.budget.presentation;
 
 import com.huynh.personal_expense_be.modules.budget.application.dto.BudgetResponse;
 import com.huynh.personal_expense_be.modules.budget.application.dto.CreateBudgetCommand;
+import com.huynh.personal_expense_be.modules.budget.application.dto.UpdateBudgetCommand;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.CreateBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.DeleteBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.GetBudgetUseCase;
+import com.huynh.personal_expense_be.modules.budget.application.port.in.UpdateBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.presentation.request.CreateBudgetRequest;
+import com.huynh.personal_expense_be.modules.budget.presentation.request.UpdateBudgetRequest;
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,7 @@ public class BudgetController {
     private final CreateBudgetUseCase createBudgetUseCase;
     private final GetBudgetUseCase getBudgetUseCase;
     private final DeleteBudgetUseCase deleteBudgetUseCase;
+    private final UpdateBudgetUseCase updateBudgetUseCase;
 
     @PostMapping
     public ResponseEntity<BaseResponse<BudgetResponse>> create(
@@ -65,5 +69,25 @@ public class BudgetController {
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         deleteBudgetUseCase.deleteBudget(id);
         return ResponseEntity.accepted().build();
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<BaseResponse<BudgetResponse>> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateBudgetRequest request,
+            Principal principal) {
+
+        UpdateBudgetCommand command = new UpdateBudgetCommand(
+                id,
+                principal.getName(),
+                request.name(),
+                request.limitAmount(),
+                request.status()
+        );
+
+        BudgetResponse response = updateBudgetUseCase.updateBudget(command);
+
+        return ResponseEntity.ok(BaseResponse.success("Budget updated", response));
+
     }
 }

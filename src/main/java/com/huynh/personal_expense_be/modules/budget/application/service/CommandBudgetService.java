@@ -54,20 +54,22 @@ public class CommandBudgetService implements CreateBudgetUseCase, DeleteBudgetUs
 
             if (budgetRepositoryPort.existsByCategoryIdAndUserId(command.categoryId(), command.userId())) {
 
-                throw new DuplicateException("Budget for category '" + category.getName() + "' already exists for user '" + command.userId() + "'");
+                throw new BusinessValidationException(List.of(ValidationFieldError.of(
+                        "categoryId",
+                        command.categoryId().toString(),
+                        "Budget for category '" + category.getName() + "' already exists for user '" + command.userId() + "'",
+                        null
+                )));
             }
 
-        }
-
-        if (budgetRepositoryPort.existsByUserId(command.userId())) {
-
-
-            throw new DuplicateException("Overall budget for user '" + command.userId() + "' already exists");
+        } else {
+            if (budgetRepositoryPort.existsOverallByUserId(command.userId())) {
+                throw new DuplicateException("Overall budget for user '" + command.userId() + "' already exists");
+            }
         }
 
 
         Budget budget = Budget.builder()
-                .id(UUID.randomUUID())
                 .name(command.name())
                 .userId(command.userId())
                 .limitAmount(command.limitAmount())
