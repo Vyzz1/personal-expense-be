@@ -94,6 +94,7 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
 
         TransactionDeletedEvent deletedEvent = new TransactionDeletedEvent(
                 transaction.getUserId(),
+                transaction.getCategory().getId(),
                 transaction.getAmount(),
                 transaction.getOccurredAt()
         );
@@ -128,6 +129,7 @@ public class TransactionService  implements CreateTransactionUseCase, GetListTra
 
         TransactionUpdatedEvent updateEvent = new TransactionUpdatedEvent(
                 saved.getUserId(),
+                saved.getCategory().getId(),
                 oldAmount,
                 saved.getAmount(),
                 saved.getOccurredAt()
