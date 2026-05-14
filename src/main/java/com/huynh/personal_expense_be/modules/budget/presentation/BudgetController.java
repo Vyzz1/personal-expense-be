@@ -104,7 +104,8 @@ public class BudgetController {
                 id,
                 principal.getName(),
                 request.name(),
-                request.limitAmount()
+                request.limitAmount(),
+                request.thresholdPercentage()
         );
 
         BudgetResponse response = updateBudgetUseCase.updateBudget(command);

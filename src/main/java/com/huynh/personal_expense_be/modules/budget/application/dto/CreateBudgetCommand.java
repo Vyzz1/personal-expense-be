@@ -5,6 +5,7 @@ import com.huynh.personal_expense_be.modules.budget.domain.BudgetStatus;
 import com.huynh.personal_expense_be.modules.category.domain.Category;
 
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.UUID;
 
 public record CreateBudgetCommand (
@@ -24,6 +25,7 @@ public record CreateBudgetCommand (
                 .thresholdPercentage(command.thresholdPercentage)
                 .spentAmount(BigDecimal.ZERO)
                 .status(BudgetStatus.ACTIVE)
+                .period(YearMonth.now())
                 .build();
     }
 }

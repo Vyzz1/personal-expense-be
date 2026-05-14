@@ -53,6 +53,7 @@ public class BudgetTransactionHandlerService implements HandleTransactionUseCase
         if (rows == 0) {
             logger.info("No budget found...");
         }
+        budgetPersistencePort.markBudgetExceededIfThresholdReached(event.userId(), categoryId, period);
     }
 
 
@@ -87,6 +88,7 @@ public class BudgetTransactionHandlerService implements HandleTransactionUseCase
             logger.info("No budget found to update spent amount for user {}, category {}, period {}",
                     event.userId(), categoryId, period);
         }
+        budgetPersistencePort.markBudgetExceededIfThresholdReached(event.userId(), categoryId, period);
 
         sendBudgetNotification(event.userId(), "Budget updated due to transaction update. Amount changed by " + delta);
     }
@@ -108,6 +110,7 @@ public class BudgetTransactionHandlerService implements HandleTransactionUseCase
             logger.info("No budget found to delete spent amount for user {}, category {}, period {}",
                     event.userId(), categoryId, period);
         }
+        budgetPersistencePort.markBudgetExceededIfThresholdReached(event.userId(), categoryId, period);
         sendBudgetNotification(event.userId(), "Budget updated due to transaction deletion. Amount decreased by " + event.amount());
     }
 

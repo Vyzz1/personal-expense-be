@@ -6,5 +6,6 @@ import java.util.UUID;
 public interface BudgetPersistencePort {
     void ensureBudgetExists(String userId, UUID categoryId, String period);
     int incrementSpentAmount(String userId, UUID categoryId, String period, BigDecimal amount);
+    int markBudgetExceededIfThresholdReached(String userId, UUID categoryId, String period);
     int expireBudgetsBeforePeriod(String period);
 }

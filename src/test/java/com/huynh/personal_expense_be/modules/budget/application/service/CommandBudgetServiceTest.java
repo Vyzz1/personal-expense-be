@@ -109,19 +109,23 @@ public class CommandBudgetServiceTest {
     @Test
     void updateBudget_success() {
         UUID budgetId = UUID.randomUUID();
-        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"));
+        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"), 80.0f);
         
         Budget existingBudget = Budget.builder()
                 .id(budgetId)
                 .name("Old Name")
                 .userId("user-1")
                 .limitAmount(new BigDecimal("500.00"))
+                .spentAmount(new BigDecimal("900.00"))
+                .thresholdPercentage(60.0f)
                 .status(BudgetStatus.ACTIVE).period(YearMonth.now())
                 .build();
 
         Budget updatedBudget = existingBudget.toBuilder()
                 .name("New Name")
                 .limitAmount(new BigDecimal("1000.00"))
+                .thresholdPercentage(80.0f)
+                .status(BudgetStatus.EXCEEDED)
                 .build();
                 
         // using existingBudget.update which returns new Budget inside service
@@ -134,13 +138,15 @@ public class CommandBudgetServiceTest {
         assertNotNull(response);
         assertEquals("New Name", response.name());
         assertEquals(new BigDecimal("1000.00"), response.limitAmount());
+        assertEquals("EXCEEDED", response.status());
+        assertEquals(80.0f, response.thresholdPercentage());
         verify(budgetRepositoryPort).save(any(Budget.class));
     }
 
     @Test
     void updateBudget_notFound_throwsNotFoundException() {
         UUID budgetId = UUID.randomUUID();
-        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"));
+        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"), 80.0f);
 
         when(budgetRepositoryPort.findById("user-1", budgetId)).thenReturn(Optional.empty());
 

@@ -68,9 +68,9 @@ public class BudgetControllerTest {
     @Test
     void create_success() throws Exception {
         UUID categoryId = UUID.randomUUID();
-        CreateBudgetRequest request = new CreateBudgetRequest("Food", categoryId, new BigDecimal("500.0"), 0.6f);
+        CreateBudgetRequest request = new CreateBudgetRequest("Food", categoryId, new BigDecimal("500.0"), 60.0f);
 
-        BudgetResponse response = new BudgetResponse(UUID.randomUUID(), "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null);
+        BudgetResponse response = new BudgetResponse(UUID.randomUUID(), "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null, 60.0f);
 
         when(createBudgetUseCase.createBudget(any(CreateBudgetCommand.class))).thenReturn(response);
 
@@ -89,7 +89,7 @@ public class BudgetControllerTest {
     @Test
     void getAll_success() throws Exception {
         UUID id = UUID.randomUUID();
-        BudgetResponse response = new BudgetResponse(id, "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null);
+        BudgetResponse response = new BudgetResponse(id, "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null, 60.0f);
 
         PageResult<BudgetResponse> pageResult = PageResult.of(List.of(response), 0, 10, 1, 1, true);
         when(getBudgetUseCase.getListBudget(any())).thenReturn(pageResult);
@@ -106,7 +106,7 @@ public class BudgetControllerTest {
     @Test
     void getById_success() throws Exception {
         UUID id = UUID.randomUUID();
-        BudgetResponse response = new BudgetResponse(id, "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null);
+        BudgetResponse response = new BudgetResponse(id, "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null, 60.0f);
 
         when(getBudgetUseCase.getBudgetById("user1", id)).thenReturn(response);
 
@@ -123,7 +123,7 @@ public class BudgetControllerTest {
     void getByPeriod_success() throws Exception {
         UUID id = UUID.randomUUID();
         String period = "2026-05";
-        BudgetResponse response = new BudgetResponse(id, "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", period, null, null);
+        BudgetResponse response = new BudgetResponse(id, "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", period, null, null, 60.0f);
 
         when(getBudgetUseCase.getBudgetsByPeriod("user1", period)).thenReturn(List.of(response));
 
@@ -153,8 +153,8 @@ public class BudgetControllerTest {
     @Test
     void update_success() throws Exception {
         UUID id = UUID.randomUUID();
-        UpdateBudgetRequest request = new UpdateBudgetRequest("Food Updated", new BigDecimal("600.0"));
-        BudgetResponse response = new BudgetResponse(id, "Food Updated", new BigDecimal("600.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null);
+        UpdateBudgetRequest request = new UpdateBudgetRequest("Food Updated", new BigDecimal("600.0"), 70.0f);
+        BudgetResponse response = new BudgetResponse(id, "Food Updated", new BigDecimal("600.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null, 60.0f);
 
         when(updateBudgetUseCase.updateBudget(any(UpdateBudgetCommand.class))).thenReturn(response);
 

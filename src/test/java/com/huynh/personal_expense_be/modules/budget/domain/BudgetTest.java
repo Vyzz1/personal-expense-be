@@ -46,15 +46,19 @@ public class BudgetTest {
         Budget budget = Budget.builder()
                 .name("June Budget")
                 .limitAmount(BigDecimal.valueOf(500))
+                .spentAmount(BigDecimal.valueOf(300))
+                .thresholdPercentage(60.0f)
                 .status(BudgetStatus.ACTIVE)
                 .build();
 
         // When
-        Budget updatedBudget = budget.update("Updated June Budget", BigDecimal.valueOf(600));
+        Budget updatedBudget = budget.update("Updated June Budget", BigDecimal.valueOf(600), 50.0f);
 
         // Then
         assertThat(updatedBudget.getName()).isEqualTo("Updated June Budget");
         assertThat(updatedBudget.getLimitAmount()).isEqualTo(BigDecimal.valueOf(600));
+        assertThat(updatedBudget.getThresholdPercentage()).isEqualTo(50.0f);
+        assertThat(updatedBudget.getStatus()).isEqualTo(BudgetStatus.EXCEEDED);
     }
 
     @Test

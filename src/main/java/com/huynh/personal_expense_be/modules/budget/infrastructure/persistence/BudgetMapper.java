@@ -24,6 +24,7 @@ public class BudgetMapper {
                 .updatedAt(budget.getUpdatedAt())
                 .isDeleted(budget.getIsDeleted())
                 .status(budget.getStatus())
+                .thresholdPercentage(budget.getThresholdPercentage())
                 .build();
     }
 
@@ -40,6 +41,7 @@ public class BudgetMapper {
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .isDeleted(entity.getIsDeleted())
+                .thresholdPercentage(entity.getThresholdPercentage())
                 .build();
     }
 }

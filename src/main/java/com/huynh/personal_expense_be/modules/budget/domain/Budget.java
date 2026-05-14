@@ -42,12 +42,30 @@ public class Budget {
     private Instant isDeleted;
 
 
-    public Budget update(String name, BigDecimal limitAmount) {
+    public Budget update(String name, BigDecimal limitAmount, float thresholdPercentage) {
+        BudgetStatus recalculatedStatus = recalculateStatus(limitAmount, thresholdPercentage);
+
         return this.toBuilder()
                 .name(name)
                 .limitAmount(limitAmount)
+                .thresholdPercentage(thresholdPercentage)
+                .status(recalculatedStatus)
                 .updatedAt(Instant.now())
                 .build();
+    }
+
+    private BudgetStatus recalculateStatus(BigDecimal newLimitAmount, float newThresholdPercentage) {
+        if (this.status == BudgetStatus.EXPIRED) {
+            return BudgetStatus.EXPIRED;
+        }
+
+        BigDecimal currentSpentAmount = this.spentAmount == null ? BigDecimal.ZERO : this.spentAmount;
+        BigDecimal normalizedThreshold = newThresholdPercentage > 1
+                ? BigDecimal.valueOf(newThresholdPercentage).divide(BigDecimal.valueOf(100))
+                : BigDecimal.valueOf(newThresholdPercentage);
+        BigDecimal exceededAmount = newLimitAmount.multiply(normalizedThreshold);
+
+        return currentSpentAmount.compareTo(exceededAmount) >= 0 ? BudgetStatus.EXCEEDED : BudgetStatus.ACTIVE;
     }
 
     public Budget addSpentAmount(BigDecimal amount) {
@@ -76,6 +94,10 @@ public class Budget {
                 .status(BudgetStatus.EXCEEDED)
                 .updatedAt(Instant.now())
                 .build();
+    }
+
+    public YearMonth getCurrentPeriod() {
+        return YearMonth.now();
     }
 
 
