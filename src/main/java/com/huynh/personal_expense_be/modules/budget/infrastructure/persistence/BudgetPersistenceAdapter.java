@@ -65,11 +65,7 @@ public class BudgetPersistenceAdapter implements BudgetPersistencePort {
     public int incrementSpentAmount(String userId, UUID categoryId, String period, BigDecimal delta) {
         String sql = """
         UPDATE budgets
-        SET spent_amount = GREATEST(spent_amount + ?, 0),
-            budget_status = CASE
-                WHEN GREATEST(spent_amount + ?, 0) >= (limit_amount * threshold_percentage) THEN 'EXCEEDED'
-                ELSE budget_status
-            END
+        SET spent_amount = GREATEST(spent_amount + ?, 0)
         WHERE user_id = ?
           AND category_id = ?
           AND period = ?
@@ -79,14 +75,45 @@ public class BudgetPersistenceAdapter implements BudgetPersistencePort {
         entityManager.unwrap(Session.class).doWork(connection -> {
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 pstmt.setBigDecimal(1, delta);
-                pstmt.setBigDecimal(2, delta);
-                pstmt.setString(3, userId);
-                pstmt.setObject(4, categoryId);
-                pstmt.setString(5, period);
+                pstmt.setString(2, userId);
+                pstmt.setObject(3, categoryId);
+                pstmt.setString(4, period);
                 result[0] = pstmt.executeUpdate();
             }
         });
 
+        return result[0];
+    }
+
+    @Override
+    public int markBudgetExceededIfThresholdReached(String userId, UUID categoryId, String period) {
+        String sql = """
+        UPDATE budgets
+        SET budget_status = 'EXCEEDED',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?
+          AND category_id = ?
+          AND period = ?
+          AND budget_status <> 'EXPIRED'
+          AND spent_amount >= (
+                limit_amount * (
+                    CASE
+                        WHEN threshold_percentage > 1 THEN threshold_percentage / 100.0
+                        ELSE threshold_percentage
+                    END
+                )
+            )
+        """;
+
+        int[] result = new int[1];
+        entityManager.unwrap(Session.class).doWork(connection -> {
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, userId);
+                pstmt.setObject(2, categoryId);
+                pstmt.setString(3, period);
+                result[0] = pstmt.executeUpdate();
+            }
+        });
         return result[0];
     }
 

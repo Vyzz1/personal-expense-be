@@ -37,7 +37,8 @@ public class BudgetRepositoryAdapter implements BudgetRepositoryPort {
             "updatedAt",
             "limitAmount",
             "spentAmount",
-            "status"
+            "status",
+            "thresholdPercentage"
     );
 
     @Override

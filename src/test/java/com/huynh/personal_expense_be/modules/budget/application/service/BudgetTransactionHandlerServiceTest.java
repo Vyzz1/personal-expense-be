@@ -46,6 +46,7 @@ public class BudgetTransactionHandlerServiceTest {
 
         verify(budgetPersistencePort, times(1)).ensureBudgetExists("user-1", categoryId, period);
         verify(budgetPersistencePort, times(1)).incrementSpentAmount("user-1", categoryId, period, new BigDecimal("100.0"));
+        verify(budgetPersistencePort, times(1)).markBudgetExceededIfThresholdReached("user-1", categoryId, period);
     }
 
     @Test
@@ -60,6 +61,7 @@ public class BudgetTransactionHandlerServiceTest {
         UUID uncategorizedId = new UUID(0L, 0L);
         verify(budgetPersistencePort, times(1)).ensureBudgetExists("user-1", uncategorizedId, period);
         verify(budgetPersistencePort, times(1)).incrementSpentAmount("user-1", uncategorizedId, period, new BigDecimal("100.0"));
+        verify(budgetPersistencePort, times(1)).markBudgetExceededIfThresholdReached("user-1", uncategorizedId, period);
     }
 
     @Test
@@ -78,9 +80,11 @@ public class BudgetTransactionHandlerServiceTest {
 
         verify(budgetPersistencePort, times(1)).ensureBudgetExists("user-1", categoryId1, period);
         verify(budgetPersistencePort, times(1)).incrementSpentAmount("user-1", categoryId1, period, new BigDecimal("10.0"));
+        verify(budgetPersistencePort, times(1)).markBudgetExceededIfThresholdReached("user-1", categoryId1, period);
         
         verify(budgetPersistencePort, times(1)).ensureBudgetExists("user-1", categoryId2, period);
         verify(budgetPersistencePort, times(1)).incrementSpentAmount("user-1", categoryId2, period, new BigDecimal("20.0"));
+        verify(budgetPersistencePort, times(1)).markBudgetExceededIfThresholdReached("user-1", categoryId2, period);
     }
 
     @Test
@@ -96,6 +100,7 @@ public class BudgetTransactionHandlerServiceTest {
 
         // delta = 150 - 100 = 50
         verify(budgetPersistencePort, times(1)).incrementSpentAmount("user-1", categoryId, period, new BigDecimal("50.0"));
+        verify(budgetPersistencePort, times(1)).markBudgetExceededIfThresholdReached("user-1", categoryId, period);
     }
 
     @Test
@@ -111,6 +116,7 @@ public class BudgetTransactionHandlerServiceTest {
 
         // delta = -100
         verify(budgetPersistencePort, times(1)).incrementSpentAmount("user-1", categoryId, period, new BigDecimal("-100.0"));
+        verify(budgetPersistencePort, times(1)).markBudgetExceededIfThresholdReached("user-1", categoryId, period);
     }
 
     private String parsePeriod(Instant occurredAt) {

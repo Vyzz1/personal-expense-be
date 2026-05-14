@@ -83,7 +83,7 @@ public class CommandBudgetService implements CreateBudgetUseCase, DeleteBudgetUs
                 .orElseThrow(() -> new NotFoundException("Budget with id '" + command.id() + "' not found for user '" + command.userId() + "'"
                 ));
 
-        Budget updatedBudget = budget.update(command.name(), command.limitAmount());
+        Budget updatedBudget = budget.update(command.name(), command.limitAmount(), command.thresholdPercentage());
 
         return BudgetResponse.from(budgetRepositoryPort.save(updatedBudget));
     }

@@ -8,6 +8,7 @@ public record UpdateBudgetCommand(
         UUID id,
         String userId,
         String name,
-        BigDecimal limitAmount
+        BigDecimal limitAmount,
+        float thresholdPercentage
 ) {
 }

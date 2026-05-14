@@ -18,7 +18,8 @@ public record BudgetResponse(
         String status,
         String period,
         Instant createdAt,
-        Instant updatedAt
+        Instant updatedAt,
+        float thresholdPercentage
 ) {
 
     public static BudgetResponse from(Budget budget) {
@@ -31,7 +32,8 @@ public record BudgetResponse(
                 budget.getStatus().toString(),
                 budget.getPeriod().toString(),
                 budget.getCreatedAt(),
-                budget.getUpdatedAt()
+                budget.getUpdatedAt(),
+                budget.getThresholdPercentage()
         );
     }
 }
