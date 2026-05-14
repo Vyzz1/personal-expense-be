@@ -7,6 +7,7 @@ import com.huynh.personal_expense_be.modules.budget.application.port.in.CreateBu
 import com.huynh.personal_expense_be.modules.budget.application.port.in.DeleteBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.GetBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.UpdateBudgetUseCase;
+import com.huynh.personal_expense_be.modules.budget.domain.BudgetStatus;
 import com.huynh.personal_expense_be.modules.budget.presentation.request.CreateBudgetRequest;
 import com.huynh.personal_expense_be.modules.budget.presentation.request.UpdateBudgetRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -151,7 +152,7 @@ public class BudgetControllerTest {
     @Test
     void update_success() throws Exception {
         UUID id = UUID.randomUUID();
-        UpdateBudgetRequest request = new UpdateBudgetRequest("Food Updated", new BigDecimal("600.0"), "ACTIVE");
+        UpdateBudgetRequest request = new UpdateBudgetRequest("Food Updated", new BigDecimal("600.0"), BudgetStatus.ACTIVE);
         BudgetResponse response = new BudgetResponse(id, "Food Updated", new BigDecimal("600.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null);
 
         when(updateBudgetUseCase.updateBudget(any(UpdateBudgetCommand.class))).thenReturn(response);

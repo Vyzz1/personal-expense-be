@@ -109,7 +109,7 @@ public class CommandBudgetServiceTest {
     @Test
     void updateBudget_success() {
         UUID budgetId = UUID.randomUUID();
-        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"), "ACTIVE");
+        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"), BudgetStatus.ACTIVE);
         
         Budget existingBudget = Budget.builder()
                 .id(budgetId)
@@ -140,7 +140,7 @@ public class CommandBudgetServiceTest {
     @Test
     void updateBudget_notFound_throwsNotFoundException() {
         UUID budgetId = UUID.randomUUID();
-        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"), "ACTIVE");
+        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"), BudgetStatus.ACTIVE);
 
         when(budgetRepositoryPort.findById("user-1", budgetId)).thenReturn(Optional.empty());
 

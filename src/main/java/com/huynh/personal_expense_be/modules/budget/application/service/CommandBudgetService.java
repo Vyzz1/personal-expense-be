@@ -69,19 +69,7 @@ public class CommandBudgetService implements CreateBudgetUseCase, DeleteBudgetUs
         }
 
 
-        Budget budget = Budget.builder()
-                .name(command.name())
-                .userId(command.userId())
-                .limitAmount(command.limitAmount())
-                .spentAmount(BigDecimal.ZERO)
-                .category(category)
-                .status(BudgetStatus.ACTIVE)
-                .period(YearMonth.now())
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .isDeleted(null)
-                .build();
-
+        Budget budget = CreateBudgetCommand.to(command, category);
 
         return BudgetResponse.from(budgetRepositoryPort.save(budget));
     }
@@ -98,7 +86,7 @@ public class CommandBudgetService implements CreateBudgetUseCase, DeleteBudgetUs
                 .orElseThrow(() -> new NotFoundException("Budget with id '" + command.id() + "' not found for user '" + command.userId() + "'"
                 ));
 
-        Budget updatedBudget = budget.update(command.name(), command.limitAmount(), BudgetStatus.valueOf(command.status()));
+        Budget updatedBudget = budget.update(command.name(), command.limitAmount());
 
         return BudgetResponse.from(budgetRepositoryPort.save(updatedBudget));
     }

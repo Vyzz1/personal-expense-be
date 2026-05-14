@@ -50,7 +50,7 @@ public class BudgetTest {
                 .build();
 
         // When
-        Budget updatedBudget = budget.update("Updated June Budget", BigDecimal.valueOf(600), BudgetStatus.EXPIRED);
+        Budget updatedBudget = budget.update("Updated June Budget", BigDecimal.valueOf(600));
 
         // Then
         assertThat(updatedBudget.getName()).isEqualTo("Updated June Budget");

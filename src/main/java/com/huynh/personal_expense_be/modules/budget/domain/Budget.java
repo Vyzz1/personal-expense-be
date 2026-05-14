@@ -27,6 +27,8 @@ public class Budget {
 
     private BigDecimal spentAmount;
 
+    private float thresholdPercentage;
+
     private Category category;
 
     private BudgetStatus status;
@@ -40,11 +42,10 @@ public class Budget {
     private Instant isDeleted;
 
 
-    public Budget update(String name, BigDecimal limitAmount, BudgetStatus status) {
+    public Budget update(String name, BigDecimal limitAmount) {
         return this.toBuilder()
                 .name(name)
                 .limitAmount(limitAmount)
-                .status(status)
                 .updatedAt(Instant.now())
                 .build();
     }
@@ -59,6 +60,20 @@ public class Budget {
     public Budget subtractSpentAmount(BigDecimal amount) {
         return this.toBuilder()
                 .spentAmount(this.spentAmount.subtract(amount))
+                .updatedAt(Instant.now())
+                .build();
+    }
+
+    public Budget markAsExpired() {
+        return this.toBuilder()
+                .status(BudgetStatus.EXPIRED)
+                .updatedAt(Instant.now())
+                .build();
+    }
+
+    public Budget markAsExceeded() {
+        return this.toBuilder()
+                .status(BudgetStatus.EXCEEDED)
                 .updatedAt(Instant.now())
                 .build();
     }

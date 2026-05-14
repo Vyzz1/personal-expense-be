@@ -10,7 +10,8 @@ import java.util.UUID;
 public record CreateBudgetRequest(
         @NotBlank String name,
         UUID categoryId,
-        @NotNull @Positive BigDecimal limitAmount
+        @NotNull @Positive BigDecimal limitAmount,
+        @Positive float thresholdPercentage
 
 ) {
 }
