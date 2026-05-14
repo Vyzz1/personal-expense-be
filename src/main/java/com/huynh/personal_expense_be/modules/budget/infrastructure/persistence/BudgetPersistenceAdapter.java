@@ -65,7 +65,11 @@ public class BudgetPersistenceAdapter implements BudgetPersistencePort {
     public int incrementSpentAmount(String userId, UUID categoryId, String period, BigDecimal delta) {
         String sql = """
         UPDATE budgets
-        SET spent_amount = GREATEST(spent_amount + ?, 0)
+        SET spent_amount = GREATEST(spent_amount + ?, 0),
+            budget_status = CASE
+                WHEN GREATEST(spent_amount + ?, 0) >= (limit_amount * threshold_percentage) THEN 'EXCEEDED'
+                ELSE budget_status
+            END
         WHERE user_id = ?
           AND category_id = ?
           AND period = ?
@@ -75,13 +79,36 @@ public class BudgetPersistenceAdapter implements BudgetPersistencePort {
         entityManager.unwrap(Session.class).doWork(connection -> {
             try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
                 pstmt.setBigDecimal(1, delta);
-                pstmt.setString(2, userId);
-                pstmt.setObject(3, categoryId);
-                pstmt.setString(4, period);
+                pstmt.setBigDecimal(2, delta);
+                pstmt.setString(3, userId);
+                pstmt.setObject(4, categoryId);
+                pstmt.setString(5, period);
                 result[0] = pstmt.executeUpdate();
             }
         });
 
         return result[0];
     }
+
+    @Override
+    public int expireBudgetsBeforePeriod(String period) {
+        String sql = """
+        UPDATE budgets
+        SET budget_status = 'EXPIRED',
+            updated_at = CURRENT_TIMESTAMP
+        WHERE period < ?
+          AND budget_status <> 'EXPIRED'
+        """;
+
+        int[] result = new int[1];
+        entityManager.unwrap(Session.class).doWork(connection -> {
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setString(1, period);
+                result[0] = pstmt.executeUpdate();
+            }
+        });
+        return result[0];
+    }
 }
+
+

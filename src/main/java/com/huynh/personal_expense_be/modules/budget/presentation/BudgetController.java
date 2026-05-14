@@ -2,14 +2,18 @@ package com.huynh.personal_expense_be.modules.budget.presentation;
 
 import com.huynh.personal_expense_be.modules.budget.application.dto.BudgetResponse;
 import com.huynh.personal_expense_be.modules.budget.application.dto.CreateBudgetCommand;
+import com.huynh.personal_expense_be.modules.budget.application.dto.GetListBudgetCommand;
 import com.huynh.personal_expense_be.modules.budget.application.dto.UpdateBudgetCommand;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.CreateBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.DeleteBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.GetBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.UpdateBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.presentation.request.CreateBudgetRequest;
+import com.huynh.personal_expense_be.modules.budget.presentation.request.GetBudgetRequest;
 import com.huynh.personal_expense_be.modules.budget.presentation.request.UpdateBudgetRequest;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.PageResult;
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
+import com.huynh.personal_expense_be.shared.response.PaginationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -39,7 +43,8 @@ public class BudgetController {
                 request.name(),
                 principal.getName(),
                 request.categoryId(),
-                request.limitAmount()
+                request.limitAmount(),
+                request.thresholdPercentage()
         );
 
         BudgetResponse response = createBudgetUseCase.createBudget(command);
@@ -47,9 +52,27 @@ public class BudgetController {
     }
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<BudgetResponse>>> getAll(Principal principal) {
-        List<BudgetResponse> list = getBudgetUseCase.getBudgetsByUserId(principal.getName());
-        return ResponseEntity.ok(BaseResponse.success("Budgets retrieved", list));
+    public ResponseEntity<BaseResponse<PaginationResponse<BudgetResponse>>> getAll(Principal principal, @ModelAttribute GetBudgetRequest request) {
+
+        GetListBudgetCommand command = new GetListBudgetCommand(
+                request.getPage(),
+                request.getSize(),
+                request.getSortBy(),
+                request.getSortOrder(),
+                principal.getName(),
+                request.getStatus(),
+                request.getSearch(),
+                request.getCategoryIds(),
+                request.getPeriod()
+        );
+
+        PageResult<BudgetResponse> result = getBudgetUseCase.getListBudget(command);
+
+        PaginationResponse<BudgetResponse> response = PaginationResponse.of(
+                result.content(), result.page(), result.size(), result.totalElements(), result.totalPages(), result.last()
+        );
+
+        return ResponseEntity.ok(BaseResponse.success("Budgets retrieved", response));
     }
 
     @GetMapping("/{id}")
@@ -81,8 +104,7 @@ public class BudgetController {
                 id,
                 principal.getName(),
                 request.name(),
-                request.limitAmount(),
-                request.status()
+                request.limitAmount()
         );
 
         BudgetResponse response = updateBudgetUseCase.updateBudget(command);

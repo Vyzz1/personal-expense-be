@@ -8,7 +8,6 @@ import com.huynh.personal_expense_be.modules.budget.application.port.in.DeleteBu
 import com.huynh.personal_expense_be.modules.budget.application.port.in.UpdateBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.out.BudgetRepositoryPort;
 import com.huynh.personal_expense_be.modules.budget.domain.Budget;
-import com.huynh.personal_expense_be.modules.budget.domain.BudgetStatus;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 
 import com.huynh.personal_expense_be.modules.category.domain.Category;
@@ -19,9 +18,7 @@ import com.huynh.personal_expense_be.shared.exception.NotFoundException;
 import com.huynh.personal_expense_be.shared.exception.ValidationFieldError;
 import lombok.RequiredArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.YearMonth;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -69,19 +66,7 @@ public class CommandBudgetService implements CreateBudgetUseCase, DeleteBudgetUs
         }
 
 
-        Budget budget = Budget.builder()
-                .name(command.name())
-                .userId(command.userId())
-                .limitAmount(command.limitAmount())
-                .spentAmount(BigDecimal.ZERO)
-                .category(category)
-                .status(BudgetStatus.ACTIVE)
-                .period(YearMonth.now())
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
-                .isDeleted(null)
-                .build();
-
+        Budget budget = CreateBudgetCommand.to(command, category);
 
         return BudgetResponse.from(budgetRepositoryPort.save(budget));
     }
@@ -98,7 +83,7 @@ public class CommandBudgetService implements CreateBudgetUseCase, DeleteBudgetUs
                 .orElseThrow(() -> new NotFoundException("Budget with id '" + command.id() + "' not found for user '" + command.userId() + "'"
                 ));
 
-        Budget updatedBudget = budget.update(command.name(), command.limitAmount(), BudgetStatus.valueOf(command.status()));
+        Budget updatedBudget = budget.update(command.name(), command.limitAmount());
 
         return BudgetResponse.from(budgetRepositoryPort.save(updatedBudget));
     }

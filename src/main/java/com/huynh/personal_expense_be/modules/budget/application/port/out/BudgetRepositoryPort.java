@@ -1,6 +1,8 @@
 package com.huynh.personal_expense_be.modules.budget.application.port.out;
 
+import com.huynh.personal_expense_be.modules.budget.application.dto.GetListBudgetCommand;
 import com.huynh.personal_expense_be.modules.budget.domain.Budget;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.PageResult;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,4 +25,6 @@ public interface BudgetRepositoryPort {
     boolean existsOverallByUserId(String userId);
 
     boolean existsByCategoryIdAndUserId(UUID categoryId, String userId);
+
+    PageResult<Budget> findAllWithFilter(GetListBudgetCommand command);
 }

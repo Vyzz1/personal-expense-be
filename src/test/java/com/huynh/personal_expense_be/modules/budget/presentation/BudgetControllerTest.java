@@ -7,6 +7,7 @@ import com.huynh.personal_expense_be.modules.budget.application.port.in.CreateBu
 import com.huynh.personal_expense_be.modules.budget.application.port.in.DeleteBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.GetBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.UpdateBudgetUseCase;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.PageResult;
 import com.huynh.personal_expense_be.modules.budget.presentation.request.CreateBudgetRequest;
 import com.huynh.personal_expense_be.modules.budget.presentation.request.UpdateBudgetRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,7 +68,7 @@ public class BudgetControllerTest {
     @Test
     void create_success() throws Exception {
         UUID categoryId = UUID.randomUUID();
-        CreateBudgetRequest request = new CreateBudgetRequest("Food", categoryId, new BigDecimal("500.0"));
+        CreateBudgetRequest request = new CreateBudgetRequest("Food", categoryId, new BigDecimal("500.0"), 0.6f);
 
         BudgetResponse response = new BudgetResponse(UUID.randomUUID(), "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null);
 
@@ -90,15 +91,16 @@ public class BudgetControllerTest {
         UUID id = UUID.randomUUID();
         BudgetResponse response = new BudgetResponse(id, "Food", new BigDecimal("500.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null);
 
-        when(getBudgetUseCase.getBudgetsByUserId("user1")).thenReturn(List.of(response));
+        PageResult<BudgetResponse> pageResult = PageResult.of(List.of(response), 0, 10, 1, 1, true);
+        when(getBudgetUseCase.getListBudget(any())).thenReturn(pageResult);
 
-        mockMvc.perform(get("/api/v1/budgets")
+                mockMvc.perform(get("/api/v1/budgets")
                         .principal(mockPrincipal))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Budgets retrieved"))
-                .andExpect(jsonPath("$.data[0].name").value("Food"));
+                .andExpect(jsonPath("$.data.content[0].name").value("Food"));
 
-        verify(getBudgetUseCase).getBudgetsByUserId("user1");
+        verify(getBudgetUseCase).getListBudget(any());
     }
 
     @Test
@@ -151,7 +153,7 @@ public class BudgetControllerTest {
     @Test
     void update_success() throws Exception {
         UUID id = UUID.randomUUID();
-        UpdateBudgetRequest request = new UpdateBudgetRequest("Food Updated", new BigDecimal("600.0"), "ACTIVE");
+        UpdateBudgetRequest request = new UpdateBudgetRequest("Food Updated", new BigDecimal("600.0"));
         BudgetResponse response = new BudgetResponse(id, "Food Updated", new BigDecimal("600.0"), BigDecimal.ZERO, null, "ACTIVE", "2026-05", null, null);
 
         when(updateBudgetUseCase.updateBudget(any(UpdateBudgetCommand.class))).thenReturn(response);

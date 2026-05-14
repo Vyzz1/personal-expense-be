@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 
 public record UpdateBudgetRequest(
         @NotBlank String name,
-        @Positive @Positive BigDecimal limitAmount,
-        String status
+        @Positive @Positive BigDecimal limitAmount
 ) {
 }

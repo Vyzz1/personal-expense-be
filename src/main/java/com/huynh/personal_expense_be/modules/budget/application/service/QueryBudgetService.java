@@ -1,8 +1,11 @@
 package com.huynh.personal_expense_be.modules.budget.application.service;
 
 import com.huynh.personal_expense_be.modules.budget.application.dto.BudgetResponse;
+import com.huynh.personal_expense_be.modules.budget.application.dto.GetListBudgetCommand;
 import com.huynh.personal_expense_be.modules.budget.application.port.in.GetBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.out.BudgetRepositoryPort;
+import com.huynh.personal_expense_be.modules.budget.domain.Budget;
+import com.huynh.personal_expense_be.modules.transaction.application.dto.PageResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +18,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class QueryBudgetService implements GetBudgetUseCase {
 
-    private  final BudgetRepositoryPort budgetRepositoryPort;
+    private final BudgetRepositoryPort budgetRepositoryPort;
 
     @Override
     public List<BudgetResponse> getBudgetsByUserId(String userId) {
@@ -38,5 +41,16 @@ public class QueryBudgetService implements GetBudgetUseCase {
         return budgetRepositoryPort.findByUserIdAndPeriod(userId, period).stream()
                 .map(BudgetResponse::from)
                 .toList();
+    }
+
+    @Override
+    public PageResult<BudgetResponse> getListBudget(GetListBudgetCommand command) {
+        PageResult<Budget> pageResult = budgetRepositoryPort.findAllWithFilter(command);
+
+        List<BudgetResponse> budgetResponses = pageResult.content().stream()
+                .map(BudgetResponse::from)
+                .toList();
+
+        return PageResult.of(budgetResponses, pageResult.page(), pageResult.size(), pageResult.totalElements(), pageResult.totalPages(), pageResult.last());
     }
 }

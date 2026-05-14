@@ -1,5 +1,6 @@
 package com.huynh.personal_expense_be.modules.budget.application.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.huynh.personal_expense_be.modules.budget.domain.Budget;
 import com.huynh.personal_expense_be.modules.category.application.dto.CategoryResponse;
 
@@ -7,6 +8,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public record BudgetResponse(
         UUID id,
         String name,

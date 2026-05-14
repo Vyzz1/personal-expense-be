@@ -35,6 +35,16 @@ public class BudgetRepositoryAdapterTest {
         MockitoAnnotations.openMocks(this);
     }
 
+    @SuppressWarnings("unchecked")
+    private TypedQuery<BudgetJpaEntity> mockBudgetQuery() {
+        return (TypedQuery<BudgetJpaEntity>) mock(TypedQuery.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    private TypedQuery<Long> mockLongQuery() {
+        return (TypedQuery<Long>) mock(TypedQuery.class);
+    }
+
     @Test
     void testSave_NewEntity() {
         Budget budget = Budget.builder().id(null).build();
@@ -72,7 +82,7 @@ public class BudgetRepositoryAdapterTest {
         BudgetJpaEntity entity = new BudgetJpaEntity();
         Budget budget = Budget.builder().id(id).build();
 
-        TypedQuery<BudgetJpaEntity> query = mock(TypedQuery.class);
+        TypedQuery<BudgetJpaEntity> query = mockBudgetQuery();
         when(entityManager.createQuery(anyString(), eq(BudgetJpaEntity.class))).thenReturn(query);
         when(query.setParameter("userId", userId)).thenReturn(query);
         when(query.setParameter("id", id)).thenReturn(query);
@@ -90,7 +100,7 @@ public class BudgetRepositoryAdapterTest {
         UUID id = UUID.randomUUID();
         String userId = "user1";
 
-        TypedQuery<BudgetJpaEntity> query = mock(TypedQuery.class);
+        TypedQuery<BudgetJpaEntity> query = mockBudgetQuery();
         when(entityManager.createQuery(anyString(), eq(BudgetJpaEntity.class))).thenReturn(query);
         when(query.setParameter("userId", userId)).thenReturn(query);
         when(query.setParameter("id", id)).thenReturn(query);
@@ -131,7 +141,7 @@ public class BudgetRepositoryAdapterTest {
         BudgetJpaEntity entity = new BudgetJpaEntity();
         Budget budget = Budget.builder().build();
 
-        TypedQuery<BudgetJpaEntity> query = mock(TypedQuery.class);
+        TypedQuery<BudgetJpaEntity> query = mockBudgetQuery();
         when(entityManager.createQuery(anyString(), eq(BudgetJpaEntity.class))).thenReturn(query);
         when(query.setParameter("userId", userId)).thenReturn(query);
         when(query.setParameter("period", period)).thenReturn(query);
@@ -148,7 +158,7 @@ public class BudgetRepositoryAdapterTest {
     void testExistsByUserId() {
         String userId = "user1";
 
-        TypedQuery<Long> query = mock(TypedQuery.class);
+        TypedQuery<Long> query = mockLongQuery();
         when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(query);
         when(query.setParameter("userId", userId)).thenReturn(query);
         when(query.getSingleResult()).thenReturn(1L);
@@ -164,7 +174,7 @@ public class BudgetRepositoryAdapterTest {
         BudgetJpaEntity entity = new BudgetJpaEntity();
         Budget budget = Budget.builder().build();
 
-        TypedQuery<BudgetJpaEntity> query = mock(TypedQuery.class);
+        TypedQuery<BudgetJpaEntity> query = mockBudgetQuery();
         when(entityManager.createQuery(anyString(), eq(BudgetJpaEntity.class))).thenReturn(query);
         when(query.setParameter("userId", userId)).thenReturn(query);
         when(query.getResultList()).thenReturn(List.of(entity));
@@ -180,7 +190,7 @@ public class BudgetRepositoryAdapterTest {
     void testExistsOverallByUserId() {
         String userId = "user1";
 
-        TypedQuery<Long> query = mock(TypedQuery.class);
+        TypedQuery<Long> query = mockLongQuery();
         when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(query);
         when(query.setParameter("userId", userId)).thenReturn(query);
         when(query.getSingleResult()).thenReturn(1L);
@@ -195,7 +205,7 @@ public class BudgetRepositoryAdapterTest {
         UUID categoryId = UUID.randomUUID();
         String userId = "user1";
 
-        TypedQuery<Long> query = mock(TypedQuery.class);
+        TypedQuery<Long> query = mockLongQuery();
         when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(query);
         when(query.setParameter("categoryId", categoryId)).thenReturn(query);
         when(query.setParameter("userId", userId)).thenReturn(query);
