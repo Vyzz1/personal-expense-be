@@ -55,7 +55,6 @@ public class BudgetTest {
         // Then
         assertThat(updatedBudget.getName()).isEqualTo("Updated June Budget");
         assertThat(updatedBudget.getLimitAmount()).isEqualTo(BigDecimal.valueOf(600));
-        assertThat(updatedBudget.getStatus()).isEqualTo(BudgetStatus.EXPIRED);
     }
 
     @Test

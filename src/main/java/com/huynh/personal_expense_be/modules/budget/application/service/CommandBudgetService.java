@@ -8,7 +8,6 @@ import com.huynh.personal_expense_be.modules.budget.application.port.in.DeleteBu
 import com.huynh.personal_expense_be.modules.budget.application.port.in.UpdateBudgetUseCase;
 import com.huynh.personal_expense_be.modules.budget.application.port.out.BudgetRepositoryPort;
 import com.huynh.personal_expense_be.modules.budget.domain.Budget;
-import com.huynh.personal_expense_be.modules.budget.domain.BudgetStatus;
 import com.huynh.personal_expense_be.modules.category.application.port.out.CategoryRepositoryPort;
 
 import com.huynh.personal_expense_be.modules.category.domain.Category;
@@ -19,9 +18,7 @@ import com.huynh.personal_expense_be.shared.exception.NotFoundException;
 import com.huynh.personal_expense_be.shared.exception.ValidationFieldError;
 import lombok.RequiredArgsConstructor;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.YearMonth;
+
 import java.util.List;
 import java.util.UUID;
 

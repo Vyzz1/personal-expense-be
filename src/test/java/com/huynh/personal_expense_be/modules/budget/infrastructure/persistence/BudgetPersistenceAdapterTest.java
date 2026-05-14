@@ -5,7 +5,6 @@ import org.hibernate.Session;
 import org.hibernate.jdbc.Work;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -33,13 +32,13 @@ public class BudgetPersistenceAdapterTest {
     @Mock
     private PreparedStatement preparedStatement;
 
-    @InjectMocks
     private BudgetPersistenceAdapter adapter;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        when(entityManager.unwrap(Session.class)).thenReturn(session);
+        adapter = new BudgetPersistenceAdapter(entityManager);
+        when(entityManager.unwrap(any())).thenReturn(session);
     }
 
     @Test
@@ -87,11 +86,33 @@ public class BudgetPersistenceAdapterTest {
 
         verify(connection).prepareStatement(anyString());
         verify(preparedStatement).setBigDecimal(1, delta);
-        verify(preparedStatement).setString(2, "user-1");
-        verify(preparedStatement).setObject(3, categoryId);
-        verify(preparedStatement).setString(4, "2026-05");
+        verify(preparedStatement).setBigDecimal(2, delta);
+        verify(preparedStatement).setString(3, "user-1");
+        verify(preparedStatement).setObject(4, categoryId);
+        verify(preparedStatement).setString(5, "2026-05");
         verify(preparedStatement).executeUpdate();
 
         assertEquals(1, result);
+    }
+
+    @Test
+    void testExpireBudgetsBeforePeriod() throws Exception {
+        String period = "2026-05";
+
+        doAnswer(invocation -> {
+            Work work = invocation.getArgument(0);
+            work.execute(connection);
+            return null;
+        }).when(session).doWork(any());
+
+        when(connection.prepareStatement(anyString())).thenReturn(preparedStatement);
+        when(preparedStatement.executeUpdate()).thenReturn(2);
+
+        int result = adapter.expireBudgetsBeforePeriod(period);
+
+        verify(connection).prepareStatement(anyString());
+        verify(preparedStatement).setString(1, period);
+        verify(preparedStatement).executeUpdate();
+        assertEquals(2, result);
     }
 }

@@ -41,7 +41,7 @@ public class CommandBudgetServiceTest {
     @Test
     void createBudget_withCategory_success() {
         UUID categoryId = UUID.randomUUID();
-        CreateBudgetCommand command = new CreateBudgetCommand("Food Budget", "user-1", categoryId, new BigDecimal("500.00"));
+        CreateBudgetCommand command = new CreateBudgetCommand("Food Budget", "user-1", categoryId, new BigDecimal("500.00"),0.6f);
         Category category = Category.builder()
                 .id(categoryId)
                 .name("Food")
@@ -75,7 +75,7 @@ public class CommandBudgetServiceTest {
     @Test
     void createBudget_categoryNotFound_throwsBusinessValidationException() {
         UUID categoryId = UUID.randomUUID();
-        CreateBudgetCommand command = new CreateBudgetCommand("Food Budget", "user-1", categoryId, new BigDecimal("500.00"));
+        CreateBudgetCommand command = new CreateBudgetCommand("Food Budget", "user-1", categoryId, new BigDecimal("500.00"),0.6f);
 
         when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.empty());
 
@@ -86,7 +86,7 @@ public class CommandBudgetServiceTest {
     @Test
     void createBudget_duplicateCategoryBudget_throwsBusinessValidationException() {
         UUID categoryId = UUID.randomUUID();
-        CreateBudgetCommand command = new CreateBudgetCommand("Food Budget", "user-1", categoryId, new BigDecimal("500.00"));
+        CreateBudgetCommand command = new CreateBudgetCommand("Food Budget", "user-1", categoryId, new BigDecimal("500.00"),0.6f);
         Category category = Category.builder().id(categoryId).name("Food").build();
 
         when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.of(category));
@@ -98,7 +98,7 @@ public class CommandBudgetServiceTest {
 
     @Test
     void createBudget_duplicateOverallBudget_throwsBusinessValidationException() {
-        CreateBudgetCommand command = new CreateBudgetCommand("Overall", "user-1", null, new BigDecimal("500.00"));
+        CreateBudgetCommand command = new CreateBudgetCommand("Overall", "user-1", null, new BigDecimal("500.00"),0.6f);
 
         when(budgetRepositoryPort.existsOverallByUserId("user-1")).thenReturn(true);
 
@@ -109,7 +109,7 @@ public class CommandBudgetServiceTest {
     @Test
     void updateBudget_success() {
         UUID budgetId = UUID.randomUUID();
-        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"), BudgetStatus.ACTIVE);
+        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"));
         
         Budget existingBudget = Budget.builder()
                 .id(budgetId)
@@ -140,7 +140,7 @@ public class CommandBudgetServiceTest {
     @Test
     void updateBudget_notFound_throwsNotFoundException() {
         UUID budgetId = UUID.randomUUID();
-        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"), BudgetStatus.ACTIVE);
+        UpdateBudgetCommand command = new UpdateBudgetCommand(budgetId, "user-1", "New Name", new BigDecimal("1000.00"));
 
         when(budgetRepositoryPort.findById("user-1", budgetId)).thenReturn(Optional.empty());
 

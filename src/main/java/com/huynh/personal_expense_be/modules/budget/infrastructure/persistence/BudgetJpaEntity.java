@@ -36,7 +36,7 @@ public class BudgetJpaEntity extends BaseEntity {
     @Column(name = "spent_amount", nullable = false, columnDefinition = "DECIMAL(19, 4)")
     private BigDecimal spentAmount;
 
-    @Column(name = "threshold_percentage", nullable = false, columnDefinition = "FLOAT")
+    @Column(name = "threshold_percentage", nullable = false, columnDefinition = "REAL")
     private float thresholdPercentage;
 
     @ManyToOne
