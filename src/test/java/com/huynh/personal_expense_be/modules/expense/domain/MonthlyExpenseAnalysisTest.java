@@ -3,6 +3,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 public class MonthlyExpenseAnalysisTest {
     
     
@@ -18,9 +20,14 @@ public class MonthlyExpenseAnalysisTest {
                 .changePercentage(java.math.BigDecimal.valueOf(25.0))
                 .build();
 
-        assert analysis.getTotalAmount().equals(java.math.BigDecimal.valueOf(1500));
-        assert analysis.getPreviousTotalAmount().equals(java.math.BigDecimal.valueOf(1200));
-        assert analysis.getChangePercentage().equals(java.math.BigDecimal.valueOf(25.0));
+        assertThat(analysis.getTotalAmount())
+                .isEqualByComparingTo("1500");
+
+        assertThat(analysis.getPreviousTotalAmount())
+                .isEqualByComparingTo("1200");
+
+        assertThat(analysis.getChangePercentage())
+                .isEqualByComparingTo("25.0");
     }
 
     

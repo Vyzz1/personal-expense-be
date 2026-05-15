@@ -4,6 +4,7 @@ import com.huynh.personal_expense_be.modules.transaction.application.dto.ImportT
 import com.huynh.personal_expense_be.modules.transaction.application.dto.TransactionBatchResponse;
 import com.huynh.personal_expense_be.modules.transaction.application.port.in.GetTransactionBatchUseCase;
 import com.huynh.personal_expense_be.modules.transaction.application.port.in.ImportTransactionUseCase;
+import com.huynh.personal_expense_be.shared.exception.InternalServerErrorException;
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.Principal;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,10 +42,26 @@ public class TransactionBatchController {
                         @RequestParam("file") MultipartFile file,
                         Principal principal) throws IOException {
                 String userId = principal.getName();
-                String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-                Path filePath = Paths.get(UPLOAD_DIR, fileName);
 
-                Files.createDirectories(filePath.getParent());
+                String originalFilename = Optional.ofNullable(file.getOriginalFilename())
+                        .filter(name -> !name.isBlank())
+                        .orElse("upload.tmp");
+
+                String safeFilename = Paths.get(originalFilename)
+                        .getFileName()
+                        .toString()
+                        .replaceAll("[^a-zA-Z0-9._-]", "_");
+
+                String fileName = UUID.randomUUID() + "_" + safeFilename;
+
+                Path uploadPath = Paths.get(UPLOAD_DIR).toAbsolutePath().normalize();
+
+                Files.createDirectories(uploadPath);
+
+                Path filePath =  uploadPath.resolve(fileName).normalize();
+                if (!filePath.startsWith(uploadPath)) {
+                        throw new InternalServerErrorException();
+                }
                 Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
                 long storedSize = Files.size(filePath);
