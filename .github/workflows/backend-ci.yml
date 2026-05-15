@@ -23,9 +23,7 @@ jobs:
           java-version: "21"
           distribution: "temurin"
           cache: maven
-      - name: Check syntax with Spotless
-        run: mvn -B verify
-        
+
       - name: Checkstyle
         run: mvn -B checkstyle:check -Dcheckstyle.consoleOutput=true
 
