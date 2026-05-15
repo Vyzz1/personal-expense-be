@@ -83,8 +83,10 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: >
           mvn -B sonar:sonar
+          -Dsonar.host.url=https://sonarcloud.io
           -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
           -Dsonar.organization=${{ secrets.SONAR_ORG }}
+          -Dsonar.token=${{ secrets.SONAR_TOKEN }}
           -Dsonar.java.binaries=target/classes
           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
