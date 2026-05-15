@@ -90,3 +90,14 @@ jobs:
           -Dsonar.java.binaries=target/classes
           -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
 
+  automerge:
+      name: Auto Merge PR
+      if: github.event_name == 'pull_request'
+      needs: [test, sonar, security]
+      runs-on: ubuntu-latest
+      steps:
+        - name: Set PR to Auto-Merge
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          run: |
+            gh pr merge ${{ github.event.pull_request.number }} --auto --squash
