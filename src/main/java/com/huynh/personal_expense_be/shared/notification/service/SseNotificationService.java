@@ -39,7 +39,7 @@ public class SseNotificationService {
 
         emitter.onCompletion(() -> removeEmitter(userId, emitter, heartbeatTask));
         emitter.onTimeout(() -> removeEmitter(userId, emitter, heartbeatTask));
-        emitter.onError((e) -> removeEmitter(userId, emitter, heartbeatTask));
+        emitter.onError(e -> removeEmitter(userId, emitter, heartbeatTask));
 
         try {
             emitter.send(SseEmitter.event().name("CONNECT").data("Connected successfully"));

@@ -8,14 +8,16 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import com.huynh.personal_expense_be.shared.exception.SecurityConfigurationException;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)  {
+        try {
+            http
                 .cors(c -> {
                 })
                 .csrf(AbstractHttpConfigurer::disable)
@@ -29,6 +31,10 @@ public class SecurityConfig {
                         jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
         return http.build();
+        } catch (Exception ex) {
+             throw new SecurityConfigurationException(
+                    "Failed to configure security filter chain", ex);
+        }
     }
 
     @Bean
