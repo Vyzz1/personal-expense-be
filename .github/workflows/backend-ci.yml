@@ -100,4 +100,4 @@ jobs:
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           run: |
-            gh pr merge ${{ github.event.pull_request.number }} --auto --squash
+            gh pr merge ${{ github.event.pull_request.number }} --auto --squash --repo ${{ github.repository }}
