@@ -1,0 +1,1 @@
+ALTER TABLE budgets ADD COLUMN threshold_percentage REAL NOT NULL DEFAULT 0;

@@ -29,10 +29,10 @@ public class MonthlyExpenseJpaEntity extends BaseEntity {
     @Column(nullable = false,name = "user_id",columnDefinition = "VARCHAR(255)")
     private String userId;
 
-    @Column(nullable = false,name = "month",columnDefinition = "SMALLINT")
+    @Column(nullable = false,name = "month",columnDefinition = "INT")
     private int month;
 
-    @Column(nullable = false,name = "year",columnDefinition = "SMALLINT")
+    @Column(nullable = false,name = "year",columnDefinition = "INT")
     private int year;
 
     @Column(nullable = false,name = "total_amount",columnDefinition = "DECIMAL(19, 4)")

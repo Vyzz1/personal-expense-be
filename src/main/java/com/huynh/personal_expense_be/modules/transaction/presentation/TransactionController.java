@@ -58,7 +58,8 @@ public class TransactionController {
                         request.getSortOrder(), userId, request.getDescription(),
                         request.getCategoryIds(), request.getType(),
                         request.getFromDate(), request.getToDate(),
-                        request.getMonth(), request.getYear()
+                        request.getMonth(), request.getYear(),
+                        request.getMinAmount(), request.getMaxAmount()
                         )
         );
         PaginationResponse<TransactionResponse> response = PaginationResponse.of(

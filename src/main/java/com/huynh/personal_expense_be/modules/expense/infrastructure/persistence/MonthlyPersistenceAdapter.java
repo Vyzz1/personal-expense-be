@@ -18,7 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -169,16 +170,23 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
         }
 
         return  rows.stream()
-                .map(row -> MonthlyExpenseAnalysis.builder()
-                        .id(row.get(0, UUID.class))
-                        .userId(row.get(1, String.class))
-                        .month(row.get(2, Integer.class))
-                        .year(row.get(3, Integer.class))
-                        .totalAmount(row.get(4, BigDecimal.class))
-                        .updatedAt(row.get(5, Instant.class))
-                        .previousTotalAmount(row.get(6, BigDecimal.class))
-                        .changePercentage(row.get(7, BigDecimal.class))
-                        .build())
+                .map(row -> {
+                    LocalDateTime updatedAt = row.get(5, LocalDateTime.class);
+                   return MonthlyExpenseAnalysis.builder()
+                            .id(row.get(0, UUID.class))
+                            .userId(row.get(1, String.class))
+                            .month(row.get(2, Integer.class))
+                            .year(row.get(3, Integer.class))
+                            .totalAmount(row.get(4, BigDecimal.class))
+                            .updatedAt(
+                                    updatedAt != null
+                                            ? updatedAt.atZone(ZoneId.systemDefault()).toInstant()
+                                            : null
+                            )
+                            . previousTotalAmount(row.get(6, BigDecimal.class))
+                            .changePercentage(row.get(7, BigDecimal.class))
+                            .build();
+                })
                 .findFirst()
                 .orElse(null);
     }
@@ -242,18 +250,26 @@ public class MonthlyPersistenceAdapter implements MonthlyExpenseRepositoryPort {
                 .setParameter("m1", months.get(1)).setParameter("y1", years.get(1))
                 .setParameter("m2", months.get(2)).setParameter("y2", years.get(2))
                 .getResultList();
-        
-       return rows.stream()
-                .map(row -> MonthlyExpenseAnalysis.builder()
-                        .id(row.get(0, UUID.class))
-                        .userId(row.get(1, String.class))
-                        .month(row.get(2, Integer.class))
-                        .year(row.get(3, Integer.class))
-                        .totalAmount(row.get(4, BigDecimal.class))
-                        .updatedAt(row.get(5, Instant.class))
-                        .previousTotalAmount(row.get(6, BigDecimal.class))
-                        .changePercentage(row.get(7, BigDecimal.class))
-                        .build())
+
+        return rows.stream()
+                .map(row -> {
+                    LocalDateTime updatedAt = row.get(5, LocalDateTime.class);
+
+                    return MonthlyExpenseAnalysis.builder()
+                            .id(row.get(0, UUID.class))
+                            .userId(row.get(1, String.class))
+                            .month(row.get(2, Integer.class))
+                            .year(row.get(3, Integer.class))
+                            .totalAmount(row.get(4, BigDecimal.class))
+                            .updatedAt(
+                                    updatedAt != null
+                                            ? updatedAt.atZone(ZoneId.systemDefault()).toInstant()
+                                            : null
+                            )
+                            .previousTotalAmount(row.get(6, BigDecimal.class))
+                            .changePercentage(row.get(7, BigDecimal.class))
+                            .build();
+                })
                 .collect(Collectors.toList());
 
     }

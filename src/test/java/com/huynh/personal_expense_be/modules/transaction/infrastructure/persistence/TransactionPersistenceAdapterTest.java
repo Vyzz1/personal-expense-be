@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -177,7 +178,7 @@ public class TransactionPersistenceAdapterTest {
         GetTransactionCommand command = new GetTransactionCommand(
                 0, 10, "occurredAt", "desc", userId, "Test",
                 java.util.List.of(UUID.randomUUID()), List.of("EXPENSE"), "2023-01-01", "2023-12-31",
-                3, 2023);
+                3, 2023 , BigDecimal.valueOf(5), BigDecimal.valueOf(500));
 
         when(entityManager.createQuery(anyString(), eq(TransactionJpaEntity.class))).thenReturn(typedQuery);
         when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
@@ -208,7 +209,7 @@ public class TransactionPersistenceAdapterTest {
         GetTransactionCommand command = new GetTransactionCommand(
                 0, 0, null, null, userId, null,
                 null, null, null, null,
-                0, 0);
+                0, 0, null, null);
 
         when(entityManager.createQuery(anyString(), eq(TransactionJpaEntity.class))).thenReturn(typedQuery);
         when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
@@ -239,7 +240,7 @@ public class TransactionPersistenceAdapterTest {
         GetTransactionCommand command = new GetTransactionCommand(
                 0, -1, "", "", userId, "  ",
                 List.of(), List.of(), "  ", "  ",
-                -1, -1);
+                -1, -1, null, null);
 
         when(entityManager.createQuery(anyString(), eq(TransactionJpaEntity.class))).thenReturn(typedQuery);
         when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);

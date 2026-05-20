@@ -5,6 +5,10 @@ import java.time.ZoneId;
 
 public class Utility {
 
+    private Utility() {
+
+    }
+
     public  static int getMonthFromInstant(Instant instant) {
         return instant.atZone(ZoneId.systemDefault()).toLocalDate().getMonthValue();
     }
