@@ -27,6 +27,8 @@ public class OutboxPersistenceAdapter  implements OutboxRepositoryPort {
         outboxMessage.setModule(module);
         outboxMessage.setPayload(objectMapper.writeValueAsString(event));
         outboxMessage.setEventType(event.getClass().getName());
+        outboxMessage.setAttemptCount(0);
+        outboxMessage.setNextRetryAt(null);
         entityManager.persist(outboxMessage);
 
        } catch (Exception e) {

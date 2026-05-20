@@ -15,7 +15,10 @@ import java.util.UUID;
 @EntityListeners(AuditingEntityListener.class)
 @Entity
 @Table(name = "outbox_messages")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class OutboxMessageJpaEntity {
 
     @Id
@@ -32,12 +35,19 @@ public class OutboxMessageJpaEntity {
     @Column(nullable = false, name = "created_at")
     private Instant createdAt;
 
-    @Column(name = "processed_at", nullable = true)
+    @Column(name = "processed_at")
     private Instant processedAt;
 
-    @Column(name = "error", length = 1000 , nullable = true)
+    @Column(name = "error", length = 1000)
     private String error;
 
     @Column(name = "event_type", length = 255, nullable = false)
     private String eventType;
+
+    @Builder.Default
+    @Column(name = "attempt_count", nullable = false)
+    private Integer attemptCount = 0;
+
+    @Column(name = "next_retry_at")
+    private Instant nextRetryAt;
 }
