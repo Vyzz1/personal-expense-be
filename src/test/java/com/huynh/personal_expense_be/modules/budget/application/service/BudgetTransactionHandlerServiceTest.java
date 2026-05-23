@@ -74,7 +74,7 @@ public class BudgetTransactionHandlerServiceTest {
         TransactionCreatedEvent ev1 = new TransactionCreatedEvent(UUID.randomUUID(), "user-1", categoryId1, new BigDecimal("10.0"), now);
         TransactionCreatedEvent ev2 = new TransactionCreatedEvent(UUID.randomUUID(), "user-1", categoryId2, new BigDecimal("20.0"), now);
 
-        TransactionChunkCreatedEvent chunkEvent = new TransactionChunkCreatedEvent(List.of(ev1, ev2));
+        TransactionChunkCreatedEvent chunkEvent = new TransactionChunkCreatedEvent(List.of(ev1, ev2), now);
 
         budgetTransactionHandlerService.handleListTransactionCreated(chunkEvent);
 
