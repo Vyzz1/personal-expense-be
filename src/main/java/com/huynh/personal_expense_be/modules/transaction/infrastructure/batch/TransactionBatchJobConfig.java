@@ -34,6 +34,7 @@ public class TransactionBatchJobConfig {
         private final TransactionValidationProcessor transactionValidationProcessor;
         private final TransactionChunkListener transactionChunkListener;
         private final JobSummaryTasklet jobSummaryTasklet;
+        private final TransactionItemWriterListener transactionItemWriterListener;
 
         @Bean
         @StepScope
@@ -62,6 +63,7 @@ public class TransactionBatchJobConfig {
         public JpaItemWriter<TransactionJpaEntity> writer() {
                 return new JpaItemWriterBuilder<TransactionJpaEntity>()
                                 .entityManagerFactory(entityManagerFactory)
+                                .usePersist(true)
                                 .build();
         }
 
@@ -75,6 +77,7 @@ public class TransactionBatchJobConfig {
                                 .writer(writer())
                                 .faultTolerant()
                                 .listener(transactionChunkListener)
+                                .listener(transactionItemWriterListener)
                                 .skip(IllegalArgumentException.class) // Skip invalid records
                                 .skipLimit(10)
                                 .skip(DataIntegrityViolationException.class)// Allow unlimited skips
