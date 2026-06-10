@@ -4,5 +4,5 @@ import java.util.UUID;
 
 public interface DeleteBudgetUseCase {
 
-    void deleteBudget(UUID budgetId);
+    void deleteBudget(String userId, UUID budgetId);
 }

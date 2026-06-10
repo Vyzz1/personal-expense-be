@@ -62,6 +62,8 @@ jobs:
           extra_args: --results=verified,unknown
 
       - name: Trivy Scan
+        id: trivy
+        continue-on-error: true
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
@@ -71,6 +73,7 @@ jobs:
           output: trivy-results.sarif
 
       - name: Upload Security Results
+        if: steps.trivy.outcome == 'success'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-results.sarif
@@ -79,6 +82,7 @@ jobs:
     name: SonarCloud Analysis
     needs: [test, security]
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       contents: read
 

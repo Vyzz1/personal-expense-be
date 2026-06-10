@@ -4,5 +4,5 @@ import java.util.UUID;
 
 public interface DeleteCategoryUseCase {
 
-    void deleteCategory(UUID id);
+    void deleteCategory(String userId, UUID id);
 }

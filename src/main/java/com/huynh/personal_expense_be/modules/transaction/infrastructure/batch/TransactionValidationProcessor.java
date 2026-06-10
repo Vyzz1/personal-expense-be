@@ -9,6 +9,7 @@ import com.huynh.personal_expense_be.modules.transaction.infrastructure.persiste
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.infrastructure.item.ItemProcessor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -51,10 +52,15 @@ public class TransactionValidationProcessor implements ItemProcessor<Transaction
         Category category = categoryRepository.existsByNameAndUserId(item.category(), item.userId()).orElse(null);
 
         if (category == null) {
-            category = categoryRepository.save(Category.builder()
-                    .name(item.category())
-                    .userId(item.userId())
-                    .build());
+            try {
+                category = categoryRepository.save(Category.builder()
+                        .name(item.category())
+                        .userId(item.userId())
+                        .build());
+            } catch (DataIntegrityViolationException e) {
+                category = categoryRepository.existsByNameAndUserId(item.category(), item.userId())
+                        .orElseThrow(() -> new IllegalStateException("Category save failed and re-fetch found nothing", e));
+            }
         }
 
         return TransactionJpaEntity.builder()

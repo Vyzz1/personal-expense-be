@@ -19,6 +19,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -145,24 +147,38 @@ public class CommandCategoryServiceTest {
     @Test
     void deleteCategory_success() {
         UUID categoryId = UUID.randomUUID();
+        Category category = Category.builder().id(categoryId).userId("user-1").build();
 
-        when(categoryRepositoryPort.existsById(categoryId)).thenReturn(true);
+        when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.of(category));
 
-        commandCategoryService.deleteCategory(categoryId);
+        commandCategoryService.deleteCategory("user-1", categoryId);
 
-        verify(categoryRepositoryPort).existsById(categoryId);
+        verify(categoryRepositoryPort).findById(categoryId);
         verify(categoryRepositoryPort).deleteById(categoryId);
     }
 
     @Test
-    void deleteCategory_throwsNotFoundException() {
+    void deleteCategory_notFound_throwsNotFoundException() {
         UUID categoryId = UUID.randomUUID();
 
-        when(categoryRepositoryPort.existsById(categoryId)).thenReturn(false);
+        when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> commandCategoryService.deleteCategory(categoryId));
+        assertThrows(NotFoundException.class, () -> commandCategoryService.deleteCategory("user-1", categoryId));
 
-        verify(categoryRepositoryPort).existsById(categoryId);
+        verify(categoryRepositoryPort).findById(categoryId);
+        verify(categoryRepositoryPort, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteCategory_notOwned_throwsNotFoundException() {
+        UUID categoryId = UUID.randomUUID();
+        Category category = Category.builder().id(categoryId).userId("other-user").build();
+
+        when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.of(category));
+
+        assertThrows(NotFoundException.class, () -> commandCategoryService.deleteCategory("user-1", categoryId));
+
+        verify(categoryRepositoryPort, never()).deleteById(any());
     }
 
 }
