@@ -90,8 +90,8 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<BaseResponse<Void>> delete(@PathVariable UUID id) {
-        deleteCategoryUseCase.deleteCategory(id);
+    public ResponseEntity<BaseResponse<Void>> delete(@PathVariable UUID id, Principal principal) {
+        deleteCategoryUseCase.deleteCategory(principal.getName(), id);
         return ResponseEntity.accepted().build();
     }
 }

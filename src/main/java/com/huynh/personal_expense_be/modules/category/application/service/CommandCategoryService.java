@@ -102,8 +102,10 @@ public class CommandCategoryService implements
 
     @Override
     @Transactional
-    public void deleteCategory(UUID id) {
-        if (!categoryRepositoryPort.existsById(id)) {
+    public void deleteCategory(String userId, UUID id) {
+        Category existing = categoryRepositoryPort.findById(id)
+                .orElseThrow(() -> new NotFoundException("Category not found with id: " + id));
+        if (!userId.equals(existing.getUserId())) {
             throw new NotFoundException("Category not found with id: " + id);
         }
         categoryRepositoryPort.deleteById(id);

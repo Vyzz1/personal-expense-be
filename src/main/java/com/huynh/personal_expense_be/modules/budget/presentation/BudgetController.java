@@ -89,8 +89,8 @@ public class BudgetController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        deleteBudgetUseCase.deleteBudget(id);
+    public ResponseEntity<Void> delete(@PathVariable UUID id, Principal principal) {
+        deleteBudgetUseCase.deleteBudget(principal.getName(), id);
         return ResponseEntity.accepted().build();
     }
 

@@ -69,15 +69,17 @@ public class Budget {
     }
 
     public Budget addSpentAmount(BigDecimal amount) {
+        BigDecimal current = this.spentAmount != null ? this.spentAmount : BigDecimal.ZERO;
         return this.toBuilder()
-                .spentAmount(this.spentAmount.add(amount))
+                .spentAmount(current.add(amount))
                 .updatedAt(Instant.now())
                 .build();
     }
 
     public Budget subtractSpentAmount(BigDecimal amount) {
+        BigDecimal current = this.spentAmount != null ? this.spentAmount : BigDecimal.ZERO;
         return this.toBuilder()
-                .spentAmount(this.spentAmount.subtract(amount))
+                .spentAmount(current.subtract(amount))
                 .updatedAt(Instant.now())
                 .build();
     }
