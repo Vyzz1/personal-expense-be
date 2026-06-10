@@ -141,13 +141,13 @@ public class BudgetControllerTest {
     void delete_success() throws Exception {
         UUID id = UUID.randomUUID();
 
-        doNothing().when(deleteBudgetUseCase).deleteBudget(id);
+        doNothing().when(deleteBudgetUseCase).deleteBudget("user1", id);
 
         mockMvc.perform(delete("/api/v1/budgets/{id}", id)
                         .principal(mockPrincipal))
                 .andExpect(status().isAccepted());
 
-        verify(deleteBudgetUseCase).deleteBudget(id);
+        verify(deleteBudgetUseCase).deleteBudget("user1", id);
     }
 
     @Test

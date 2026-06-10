@@ -157,9 +157,24 @@ public class CommandBudgetServiceTest {
     @Test
     void deleteBudget_success() {
         UUID budgetId = UUID.randomUUID();
-        
-        commandBudgetService.deleteBudget(budgetId);
+        Budget budget = Budget.builder().id(budgetId).userId("user-1").build();
 
+        when(budgetRepositoryPort.findById("user-1", budgetId)).thenReturn(Optional.of(budget));
+
+        commandBudgetService.deleteBudget("user-1", budgetId);
+
+        verify(budgetRepositoryPort).findById("user-1", budgetId);
         verify(budgetRepositoryPort, times(1)).deleteById(budgetId);
+    }
+
+    @Test
+    void deleteBudget_notOwned_throwsNotFoundException() {
+        UUID budgetId = UUID.randomUUID();
+
+        when(budgetRepositoryPort.findById("user-1", budgetId)).thenReturn(Optional.empty());
+
+        assertThrows(NotFoundException.class, () -> commandBudgetService.deleteBudget("user-1", budgetId));
+
+        verify(budgetRepositoryPort, never()).deleteById(any());
     }
 }

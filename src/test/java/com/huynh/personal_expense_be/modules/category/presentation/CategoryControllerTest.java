@@ -170,11 +170,12 @@ public class CategoryControllerTest {
 
     @Test
     void delete_ShouldReturnAccepted() throws Exception {
-        doNothing().when(deleteCategoryUseCase).deleteCategory(categoryId);
+        doNothing().when(deleteCategoryUseCase).deleteCategory("user1", categoryId);
 
-        mockMvc.perform(delete("/api/v1/categories/{id}", categoryId))
+        mockMvc.perform(delete("/api/v1/categories/{id}", categoryId)
+                        .principal(mockPrincipal))
                 .andExpect(status().isAccepted());
 
-        verify(deleteCategoryUseCase, times(1)).deleteCategory(categoryId);
+        verify(deleteCategoryUseCase, times(1)).deleteCategory("user1", categoryId);
     }
 }
