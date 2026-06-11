@@ -54,11 +54,16 @@ public class TransactionBatchAdapter implements TransactionBatchPort {
     }
 
     @Override
-    public BatchJob getBatchImportStatus(String batchId) {
+    public BatchJob getBatchImportStatus(String batchId, String userId) {
 
         JobExecution jobExecution = jobRepository.getJobExecution(Long.parseLong(batchId));
 
         if (jobExecution == null) {
+            throw new NotFoundException("Batch job not found");
+        }
+
+        String jobUserId = jobExecution.getJobParameters().getString("userId");
+        if (!userId.equals(jobUserId)) {
             throw new NotFoundException("Batch job not found");
         }
 

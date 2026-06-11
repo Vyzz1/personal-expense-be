@@ -56,7 +56,7 @@ public class TransactionBatchControllerTest {
         MockMultipartFile file = new MockMultipartFile(
                 "file",
                 "transactions.csv",
-                MediaType.TEXT_PLAIN_VALUE,
+                "text/csv",
                 "date,amount,category,description\n2023-10-01,50.0,Food,Lunch".getBytes());
 
         TransactionBatchResponse response = new TransactionBatchResponse(
@@ -83,7 +83,7 @@ public class TransactionBatchControllerTest {
                 batchId,
                 "COMPLETED");
 
-        when(getTransactionBatchUseCase.getBatchImportStatus(eq(batchId))).thenReturn(response);
+        when(getTransactionBatchUseCase.getBatchImportStatus(eq(batchId), eq(userId))).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/transactions/batch/{id}", batchId)
                 .principal(mockPrincipal()))
@@ -92,6 +92,6 @@ public class TransactionBatchControllerTest {
                 .andExpect(jsonPath("$.data.jobId").value(batchId))
                 .andExpect(jsonPath("$.data.jobStatus").value("COMPLETED"));
 
-        verify(getTransactionBatchUseCase).getBatchImportStatus(eq(batchId));
+        verify(getTransactionBatchUseCase).getBatchImportStatus(eq(batchId), eq(userId));
     }
 }

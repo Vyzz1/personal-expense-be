@@ -98,14 +98,14 @@ public class CommandCategoryServiceTest {
                 .updatedAt(Instant.now())
                 .build();
 
-        when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.of(existingCategory));
+        when(categoryRepositoryPort.findByIdAndUserId(categoryId, "user-1")).thenReturn(Optional.of(existingCategory));
         when(categoryRepositoryPort.save(any(Category.class))).thenReturn(updatedCategory);
 
         CategoryResponse result = commandCategoryService.updateCategory(categoryId, command);
 
         assertEquals("Food Updated", result.name());
         assertEquals("user-1", result.userId());
-        verify(categoryRepositoryPort).findById(categoryId);
+        verify(categoryRepositoryPort).findByIdAndUserId(categoryId, "user-1");
         verify(categoryRepositoryPort).save(any(Category.class));
     }
 
@@ -114,11 +114,11 @@ public class CommandCategoryServiceTest {
         UUID categoryId = UUID.randomUUID();
         var command = new UpdateCategoryCommand("Food Updated", null, "user-1");
 
-        when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.empty());
+        when(categoryRepositoryPort.findByIdAndUserId(categoryId, "user-1")).thenReturn(Optional.empty());
 
         assertThrows(NotFoundException.class, () -> commandCategoryService.updateCategory(categoryId, command));
 
-        verify(categoryRepositoryPort).findById(categoryId);
+        verify(categoryRepositoryPort).findByIdAndUserId(categoryId, "user-1");
     }
 
 

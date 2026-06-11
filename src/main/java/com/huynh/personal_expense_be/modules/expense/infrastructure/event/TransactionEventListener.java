@@ -40,7 +40,7 @@ public class TransactionEventListener {
     }
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleListTransactionCreated(TransactionChunkCreatedEvent chunkEvent) {
 
         log.info("Handling batch of TransactionCreatedEvents for {} transactions", chunkEvent.events().size());

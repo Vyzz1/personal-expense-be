@@ -45,25 +45,25 @@ public class QueryCategoryServiceTest {
                 .updatedAt(Instant.now())
                 .build();
 
-        when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.of(category));
+        when(categoryRepositoryPort.findByIdAndUserId(categoryId, "user-1")).thenReturn(Optional.of(category));
 
-        CategoryResponse result = queryCategoryService.getCategoryById(categoryId);
+        CategoryResponse result = queryCategoryService.getCategoryById(categoryId, "user-1");
 
         assertEquals("Food", result.name());
         assertEquals("user-1", result.userId());
         assertEquals(categoryId, result.id());
         assertNull(result.parentId());
-        verify(categoryRepositoryPort).findById(categoryId);
+        verify(categoryRepositoryPort).findByIdAndUserId(categoryId, "user-1");
     }
 
     @Test
     void getCategoryById_throwsNotFoundException() {
         UUID categoryId = UUID.randomUUID();
 
-        when(categoryRepositoryPort.findById(categoryId)).thenReturn(Optional.empty());
+        when(categoryRepositoryPort.findByIdAndUserId(categoryId, "user-1")).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> queryCategoryService.getCategoryById(categoryId));
-        verify(categoryRepositoryPort).findById(categoryId);
+        assertThrows(NotFoundException.class, () -> queryCategoryService.getCategoryById(categoryId, "user-1"));
+        verify(categoryRepositoryPort).findByIdAndUserId(categoryId, "user-1");
     }
 
     @Test

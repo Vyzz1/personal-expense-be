@@ -4,6 +4,7 @@ import com.huynh.personal_expense_be.modules.transaction.application.dto.ImportT
 import com.huynh.personal_expense_be.modules.transaction.application.dto.TransactionBatchResponse;
 import com.huynh.personal_expense_be.modules.transaction.application.port.in.GetTransactionBatchUseCase;
 import com.huynh.personal_expense_be.modules.transaction.application.port.in.ImportTransactionUseCase;
+import com.huynh.personal_expense_be.shared.exception.BadRequestException;
 import com.huynh.personal_expense_be.shared.exception.InternalServerErrorException;
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,11 @@ public class TransactionBatchController {
                         Principal principal) throws IOException {
                 String userId = principal.getName();
 
+                String contentType = file.getContentType();
+                if (!"text/csv".equals(contentType) && !"application/vnd.ms-excel".equals(contentType)) {
+                        throw new BadRequestException("Only CSV files are accepted");
+                }
+
                 String originalFilename = Optional.ofNullable(file.getOriginalFilename())
                         .filter(name -> !name.isBlank())
                         .orElse("upload.tmp");
@@ -52,21 +58,24 @@ public class TransactionBatchController {
                         .toString()
                         .replaceAll("[^a-zA-Z0-9._-]", "_");
 
+                if (!safeFilename.toLowerCase().endsWith(".csv")) {
+                        throw new BadRequestException("File extension must be .csv");
+                }
+
                 String fileName = UUID.randomUUID() + "_" + safeFilename;
 
                 Path uploadPath = Paths.get(UPLOAD_DIR).toAbsolutePath().normalize();
 
                 Files.createDirectories(uploadPath);
 
-                Path filePath =  uploadPath.resolve(fileName).normalize();
+                Path filePath = uploadPath.resolve(fileName).normalize();
                 if (!filePath.startsWith(uploadPath)) {
                         throw new InternalServerErrorException();
                 }
                 Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
                 long storedSize = Files.size(filePath);
-                log.info("Stored batch import file. userId={}, originalName={}, storedPath={}, bytes={}",
-                                                userId, file.getOriginalFilename(), filePath, storedSize);
+                log.info("Stored batch import file. userId={}, storedBytes={}", userId, storedSize);
 
                 TransactionBatchResponse response = importTransactionUseCase
                                 .importTransactions(new ImportTransactionCommand(userId, filePath.toString()));
@@ -77,8 +86,8 @@ public class TransactionBatchController {
 
         @GetMapping("/{id}")
         public ResponseEntity<BaseResponse<TransactionBatchResponse>> getBatchImportStatus(
-                        @PathVariable("id") String id) {
-                TransactionBatchResponse response = getTransactionBatchUseCase.getBatchImportStatus(id);
+                        @PathVariable("id") String id, Principal principal) {
+                TransactionBatchResponse response = getTransactionBatchUseCase.getBatchImportStatus(id, principal.getName());
                 return ResponseEntity.ok(BaseResponse.success("Batch import status retrieved", response));
         }
 

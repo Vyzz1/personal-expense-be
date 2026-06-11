@@ -20,12 +20,17 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class TransactionPersistenceAdapter implements TransactionRepositoryPort {
+
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "occurredAt", "amount", "createdAt", "updatedAt", "description", "type"
+    );
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -86,7 +91,7 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
     public PageResult<Transaction> findAllWithFilter(GetTransactionCommand command) {
         StringBuilder where = getWhereQuery(command);
 
-        String sortBy = (command.sortBy() != null && !command.sortBy().isBlank()) ? command.sortBy() : "occurredAt";
+        String sortBy = (command.sortBy() != null && ALLOWED_SORT_FIELDS.contains(command.sortBy())) ? command.sortBy() : "occurredAt";
         String sortDir = (command.sortOrder() != null && command.sortOrder().equalsIgnoreCase("asc")) ? "ASC" : "DESC";
 
         TypedQuery<TransactionJpaEntity> dataQuery = entityManager.createQuery(
@@ -193,7 +198,7 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
             where.append(" AND MONTH(t.occurredAt) = :month AND YEAR(t.occurredAt) = :year");
         }
 
-        log.info("Min & max amount {} {}",command.minAmount(),command.maxAmount());
+        log.debug("Min & max amount {} {}",command.minAmount(),command.maxAmount());
 
         if (command.minAmount() != null) {
             where.append(" AND t.amount >= :minAmount");

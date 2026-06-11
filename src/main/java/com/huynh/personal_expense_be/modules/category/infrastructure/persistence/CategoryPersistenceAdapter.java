@@ -29,6 +29,11 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
             WHERE c.id = :id AND c.isDeleted IS NULL
             """;
 
+    private String QUERY_FIND_BY_ID_AND_USER_ID = """
+            SELECT c FROM CategoryJpaEntity c
+            WHERE c.id = :id AND c.userId = :userId AND c.isDeleted IS NULL
+            """;
+
     @Override
     public Category save(Category category) {
         CategoryJpaEntity entity = categoryMapper.toJpaEntity(category);
@@ -41,6 +46,20 @@ public class CategoryPersistenceAdapter implements CategoryRepositoryPort {
     public Optional<Category> findById(UUID id) {
         CategoryJpaEntity entity = entityManager.createQuery(QUERY_FIND_BY_ID, CategoryJpaEntity.class)
                 .setParameter("id", id)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+
+        if (entity == null) return Optional.empty();
+        Category parent = resolveParent(entity.getParentId());
+        return Optional.of(categoryMapper.toDomain(entity, parent));
+    }
+
+    @Override
+    public Optional<Category> findByIdAndUserId(UUID id, String userId) {
+        CategoryJpaEntity entity = entityManager.createQuery(QUERY_FIND_BY_ID_AND_USER_ID, CategoryJpaEntity.class)
+                .setParameter("id", id)
+                .setParameter("userId", userId)
                 .getResultStream()
                 .findFirst()
                 .orElse(null);
