@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface GetCategoryUseCase {
 
-    CategoryResponse getCategoryById(UUID id);
+    CategoryResponse getCategoryById(UUID id, String userId);
 
     List<CategoryResponse> getAllCategories(String userId);
 }

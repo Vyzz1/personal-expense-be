@@ -21,8 +21,8 @@ public class ImportTransactionService implements ImportTransactionUseCase, GetTr
     }
 
     @Override
-    public TransactionBatchResponse getBatchImportStatus(String batchId) {
+    public TransactionBatchResponse getBatchImportStatus(String batchId, String userId) {
         return TransactionBatchResponse.fromBatchJob(
-                transactionBatchPort.getBatchImportStatus(batchId));
+                transactionBatchPort.getBatchImportStatus(batchId, userId));
     }
 }

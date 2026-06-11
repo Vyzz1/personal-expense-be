@@ -6,5 +6,5 @@ public interface TransactionBatchPort {
 
     BatchJob executeBatchImport(String userId, String filePath);
 
-    BatchJob getBatchImportStatus(String batchId);
+    BatchJob getBatchImportStatus(String batchId, String userId);
 }

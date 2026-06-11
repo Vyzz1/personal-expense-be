@@ -35,6 +35,7 @@ public class TransactionBatchJobConfig {
         private final TransactionChunkListener transactionChunkListener;
         private final JobSummaryTasklet jobSummaryTasklet;
         private final TransactionItemWriterListener transactionItemWriterListener;
+        private final BatchFileCleanupListener batchFileCleanupListener;
 
         @Bean
         @StepScope
@@ -94,6 +95,7 @@ public class TransactionBatchJobConfig {
         @Bean
         public Job importJob(Step validationStep, Step summaryStep) {
                 return new JobBuilder("import-job", jobRepository)
+                                .listener(batchFileCleanupListener)
                                 .start(validationStep)
                                 .next(summaryStep)
                                 .build();

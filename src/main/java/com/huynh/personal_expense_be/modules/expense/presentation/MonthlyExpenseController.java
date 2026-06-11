@@ -7,6 +7,7 @@ import com.huynh.personal_expense_be.modules.expense.application.port.in.GetMont
 import com.huynh.personal_expense_be.modules.expense.application.port.in.GetThreeMonthCompareUseCase;
 import com.huynh.personal_expense_be.modules.expense.presentation.request.GetMonthlyExpenseRequest;
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -25,7 +26,7 @@ public class MonthlyExpenseController {
     private final GetThreeMonthCompareUseCase getThreeMonthCompareUseCase;
 
     @GetMapping("/monthly")
-    public BaseResponse<GetMonthlyExpenseResponse> getMonthlyExpense(@ModelAttribute GetMonthlyExpenseRequest request, Principal principal) {
+    public BaseResponse<GetMonthlyExpenseResponse> getMonthlyExpense(@Valid @ModelAttribute GetMonthlyExpenseRequest request, Principal principal) {
         String userId = principal.getName();
 
         var command = new GetMonthlyExpenseCommand(
@@ -38,7 +39,7 @@ public class MonthlyExpenseController {
     }
 
     @GetMapping("/compare")
-    public BaseResponse<List<GetMonthlyExpenseResponse>> getThreeMonthCompare(@ModelAttribute GetMonthlyExpenseRequest request, Principal principal) {
+    public BaseResponse<List<GetMonthlyExpenseResponse>> getThreeMonthCompare(@Valid @ModelAttribute GetMonthlyExpenseRequest request, Principal principal) {
         String userId = principal.getName();
 
         var command = new GetThreeMonthCompareCommand(

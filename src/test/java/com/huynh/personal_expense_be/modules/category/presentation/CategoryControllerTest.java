@@ -97,9 +97,10 @@ public class CategoryControllerTest {
 
     @Test
     void getById_ShouldReturnCategory() throws Exception {
-        when(getCategoryUseCase.getCategoryById(categoryId)).thenReturn(categoryResponse);
+        when(getCategoryUseCase.getCategoryById(categoryId, "user1")).thenReturn(categoryResponse);
 
-        mockMvc.perform(get("/api/v1/categories/{id}", categoryId))
+        mockMvc.perform(get("/api/v1/categories/{id}", categoryId)
+                .principal(mockPrincipal))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Category retrieved successfully"))
                 .andExpect(jsonPath("$.data.id").value(categoryId.toString()))

@@ -46,9 +46,9 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<BaseResponse<CategoryResponse>> getById(@PathVariable UUID id) {
+    public ResponseEntity<BaseResponse<CategoryResponse>> getById(@PathVariable UUID id, Principal principal) {
         return ResponseEntity.ok(
-                BaseResponse.success("Category retrieved successfully", getCategoryUseCase.getCategoryById(id)));
+                BaseResponse.success("Category retrieved successfully", getCategoryUseCase.getCategoryById(id, principal.getName())));
     }
 
     @GetMapping

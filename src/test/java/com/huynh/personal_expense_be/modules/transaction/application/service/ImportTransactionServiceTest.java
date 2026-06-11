@@ -55,11 +55,12 @@ public class ImportTransactionServiceTest {
                 .status("COMPLETED")
                 .build();
 
-        when(transactionBatchPort.getBatchImportStatus(batchId)).thenReturn(batchJob);
+        String userId = "user1";
+        when(transactionBatchPort.getBatchImportStatus(batchId, userId)).thenReturn(batchJob);
 
-        var response = importTransactionService.getBatchImportStatus(batchId);
+        var response = importTransactionService.getBatchImportStatus(batchId, userId);
 
-        verify(transactionBatchPort).getBatchImportStatus(batchId);
+        verify(transactionBatchPort).getBatchImportStatus(batchId, userId);
 
         assertThat(response).isNotNull();
         assertThat(response.jobId()).isEqualTo(batchJob.getBatchId());

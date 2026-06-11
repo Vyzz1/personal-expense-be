@@ -4,5 +4,5 @@ import com.huynh.personal_expense_be.modules.transaction.application.dto.Transac
 
 public interface GetTransactionBatchUseCase {
 
-    TransactionBatchResponse getBatchImportStatus(String batchId);
+    TransactionBatchResponse getBatchImportStatus(String batchId, String userId);
 }

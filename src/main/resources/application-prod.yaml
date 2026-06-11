@@ -1,6 +1,11 @@
 server:
   port: 8080
 
+app:
+  cors:
+    allowed-origin-patterns:
+      - ${ALLOWED_ORIGIN:https://your-production-frontend.com}
+
 spring:
   application:
     name: personal-expense-be

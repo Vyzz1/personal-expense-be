@@ -54,14 +54,14 @@ public class CommandBudgetService implements CreateBudgetUseCase, DeleteBudgetUs
                 throw new BusinessValidationException(List.of(ValidationFieldError.of(
                         "categoryId",
                         command.categoryId().toString(),
-                        "Budget for category '" + category.getName() + "' already exists for user '" + command.userId() + "'",
+                        "A budget for this category already exists",
                         null
                 )));
             }
 
         } else {
             if (budgetRepositoryPort.existsOverallByUserId(command.userId())) {
-                throw new DuplicateException("Overall budget for user '" + command.userId() + "' already exists");
+                throw new DuplicateException("An overall budget already exists");
             }
         }
 
@@ -74,15 +74,14 @@ public class CommandBudgetService implements CreateBudgetUseCase, DeleteBudgetUs
     @Override
     public void deleteBudget(String userId, UUID budgetId) {
         budgetRepositoryPort.findById(userId, budgetId)
-                .orElseThrow(() -> new NotFoundException("Budget with id '" + budgetId + "' not found for user '" + userId + "'"));
+                .orElseThrow(() -> new NotFoundException("Budget not found"));
         budgetRepositoryPort.deleteById(budgetId);
     }
 
     @Override
     public BudgetResponse updateBudget(UpdateBudgetCommand command) {
         Budget budget = budgetRepositoryPort.findById(command.userId(), command.id())
-                .orElseThrow(() -> new NotFoundException("Budget with id '" + command.id() + "' not found for user '" + command.userId() + "'"
-                ));
+                .orElseThrow(() -> new NotFoundException("Budget not found"));
 
         Budget updatedBudget = budget.update(command.name(), command.limitAmount(), command.thresholdPercentage());
 

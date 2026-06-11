@@ -44,17 +44,15 @@ public class CommandCategoryService implements
             throw new BusinessValidationException(fieldErrors);
         }
 
-        if(command.parentId() != null){
-            if (categoryRepositoryPort.findById(command.parentId()).isEmpty()) {
+        if (command.parentId() != null) {
+            if (categoryRepositoryPort.findByIdAndUserId(command.parentId(), command.userId()).isEmpty()) {
                 List<ValidationFieldError> fieldErrors = List.of(ValidationFieldError.of(
                         "parentId",
                         command.parentId().toString(),
                         "Parent category not found",
                         null
                 ));
-
                 throw new BusinessValidationException(fieldErrors);
-                
             }
         }
 
@@ -88,8 +86,8 @@ public class CommandCategoryService implements
             throw new BusinessValidationException(fieldErrors);
         }
 
-        Category existing = categoryRepositoryPort.findById(id)
-                .orElseThrow(() -> new NotFoundException("Category not found with id: " + id));
+        Category existing = categoryRepositoryPort.findByIdAndUserId(id, command.userId())
+                .orElseThrow(() -> new NotFoundException("Category not found"));
 
         Category updated = existing.toBuilder()
                 .name(command.name())

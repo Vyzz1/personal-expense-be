@@ -22,9 +22,9 @@ public class QueryCategoryService implements GetCategoryUseCase, GetCategoryAnal
     private final CategoryRepositoryPort categoryRepositoryPort;
 
     @Override
-    public CategoryResponse getCategoryById(UUID id) {
-        Category category = categoryRepositoryPort.findById(id)
-                .orElseThrow(() -> new NotFoundException("Category not found with id: " + id));
+    public CategoryResponse getCategoryById(UUID id, String userId) {
+        Category category = categoryRepositoryPort.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new NotFoundException("Category not found"));
         return CategoryResponse.from(category);
     }
 
