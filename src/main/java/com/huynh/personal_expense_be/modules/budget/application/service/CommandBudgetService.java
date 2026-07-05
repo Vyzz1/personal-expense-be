@@ -74,7 +74,7 @@ public class CommandBudgetService implements CreateBudgetUseCase, DeleteBudgetUs
     @Override
     public void deleteBudget(String userId, UUID budgetId) {
         budgetRepositoryPort.findById(userId, budgetId)
-                .orElseThrow(() -> new NotFoundException("Budget not found"));
+                .orElseThrow(() -> new NotFoundException("Budget with id '" + budgetId + "' not found for user '" + userId + "'"));
         budgetRepositoryPort.deleteById(budgetId);
     }
 
