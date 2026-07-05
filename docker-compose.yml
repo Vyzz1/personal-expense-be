@@ -13,6 +13,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=personal_expense_db
+      -
     ports:
       - "5432:5432"
     volumes:
@@ -37,6 +38,26 @@ services:
     depends_on:
       - postgres
 
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      - personal-expense-be
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+
   nginx:
     image: nginx:alpine
     ports:
@@ -51,3 +72,5 @@ volumes:
     sonarqube_data:
     sonarqube_logs:
     sonarqube_extensions:
+    prometheus_data:
+    grafana_data:
