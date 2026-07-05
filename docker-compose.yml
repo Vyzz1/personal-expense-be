@@ -8,26 +8,18 @@ services:
       - "9090:8080"
     command: start-dev
   postgres:
-    image: postgres:18-alpine
+    image: postgres:13-alpine
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=personal_expense_db
-      -
     ports:
       - "5432:5432"
     volumes:
       - data-volume:/var/lib/postgresql/data
-  sonarqube:
-    image: sonarqube:community
-    ports:
-      - "9000:9000"
-    volumes:
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_logs:/opt/sonarqube/logs
-      - sonarqube_extensions:/opt/sonarqube/extensions
+
   personal-expense-be:
-    build: .
+    image:  ghcr.io/vyzz1/personal-expense-be:latest
     ports:
       - "8080:8080"
     environment:
@@ -35,6 +27,9 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - SPRING_PROFILES_ACTIVE=prod
+      - ALLOWED_ORIGIN=http://localhost:5173
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:9090/realms/my-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/my-realm/protocol/openid-connect/certs
     depends_on:
       - postgres
 
