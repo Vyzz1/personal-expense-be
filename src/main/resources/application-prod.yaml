@@ -1,6 +1,19 @@
 server:
   port: 8080
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    tags:
+      application: personal-expense-be
+
 app:
   cors:
     allowed-origin-patterns:

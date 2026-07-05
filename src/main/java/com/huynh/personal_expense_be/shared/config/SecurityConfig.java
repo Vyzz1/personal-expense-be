@@ -30,6 +30,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> {
                         auth.requestMatchers("/public/**").permitAll();
+                        auth.requestMatchers("/actuator/health", "/actuator/prometheus").permitAll();
                         if (isDevMode) {
                             auth.requestMatchers("/actuator/**").permitAll();
                         }

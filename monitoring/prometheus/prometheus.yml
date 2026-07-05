@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: personal-expense-be
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - personal-expense-be:8080
