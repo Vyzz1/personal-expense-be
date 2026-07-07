@@ -56,3 +56,7 @@ spring:
         jwt:
           issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:9090/realms/my-realm}
           jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI:http://localhost:9090/realms/my-realm/protocol/openid-connect/certs}
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: false

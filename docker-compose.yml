@@ -20,8 +20,6 @@ services:
 
   personal-expense-be:
     image:  ghcr.io/vyzz1/personal-expense-be:latest
-    ports:
-      - "8080:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/personal_expense_db
       - SPRING_DATASOURCE_USERNAME=postgres
