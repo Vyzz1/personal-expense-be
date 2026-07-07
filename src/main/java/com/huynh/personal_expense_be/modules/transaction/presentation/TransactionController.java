@@ -9,6 +9,10 @@ import com.huynh.personal_expense_be.modules.transaction.presentation.request.Ge
 import com.huynh.personal_expense_be.modules.transaction.presentation.request.TransactionRequest;
 import com.huynh.personal_expense_be.shared.response.BaseResponse;
 import com.huynh.personal_expense_be.shared.response.PaginationResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +21,11 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.UUID;
 
-
 @RestController
 @RequestMapping("/api/v1/transactions")
 @RequiredArgsConstructor
+@Tag(name = "Transactions", description = "Manage income and expense transactions")
+@SecurityRequirement(name = "bearerAuth")
 public class TransactionController {
 
     private final CreateTransactionUseCase createTransactionUseCase;
@@ -29,9 +34,11 @@ public class TransactionController {
     private final DeleteTransactionUseCase deleteTransactionUseCase;
     private final UpdateTransactionUseCase updateTransactionUseCase;
 
+    @Operation(summary = "Create a transaction")
+    @ApiResponse(responseCode = "200", description = "Transaction created")
     @PostMapping
-    public ResponseEntity<BaseResponse<TransactionResponse>> createTransaction(@Valid @RequestBody TransactionRequest transactionRequest , Principal principal) {
-
+    public ResponseEntity<BaseResponse<TransactionResponse>> createTransaction(
+            @Valid @RequestBody TransactionRequest transactionRequest, Principal principal) {
         String userId = principal.getName();
         TransactionResponse response = createTransactionUseCase.createTransaction(
                 new CreateTransactionCommand(
@@ -43,15 +50,14 @@ public class TransactionController {
                         userId
                 )
         );
-        return ResponseEntity.ok(BaseResponse.success("Transaction Created !",response));
-
+        return ResponseEntity.ok(BaseResponse.success("Transaction Created !", response));
     }
 
+    @Operation(summary = "Get paginated list of transactions", description = "Supports filtering by date range, amount, category, type and keyword search")
+    @ApiResponse(responseCode = "200", description = "Transactions retrieved")
     @GetMapping
     public ResponseEntity<BaseResponse<PaginationResponse<TransactionResponse>>> getAllTransactions(
-            @ModelAttribute GetTransactionRequest request,
-            Principal principal) {
-
+            @ModelAttribute GetTransactionRequest request, Principal principal) {
         String userId = principal.getName();
         PageResult<TransactionResponse> result = getListTransactionUseCase.getListTransaction(
                 new GetTransactionCommand(request.getPage(), request.getSize(), request.getSortBy(),
@@ -60,7 +66,7 @@ public class TransactionController {
                         request.getFromDate(), request.getToDate(),
                         request.getMonth(), request.getYear(),
                         request.getMinAmount(), request.getMaxAmount()
-                        )
+                )
         );
         PaginationResponse<TransactionResponse> response = PaginationResponse.of(
                 result.content(), result.page(), result.size(), result.totalElements(), result.totalPages(), result.last()
@@ -68,6 +74,8 @@ public class TransactionController {
         return ResponseEntity.ok(BaseResponse.success("Transactions retrieved successfully!", response));
     }
 
+    @Operation(summary = "Get transaction by ID")
+    @ApiResponse(responseCode = "200", description = "Transaction retrieved")
     @GetMapping("/{id}")
     public ResponseEntity<BaseResponse<TransactionResponse>> getTransactionDetail(
             @PathVariable UUID id, Principal principal) {
@@ -76,21 +84,23 @@ public class TransactionController {
         return ResponseEntity.ok(BaseResponse.success("Transaction retrieved successfully !", response));
     }
 
+    @Operation(summary = "Delete a transaction")
+    @ApiResponse(responseCode = "200", description = "Transaction deleted")
     @DeleteMapping("/{id}")
-    public ResponseEntity<BaseResponse<Void>> deleteTransaction (@PathVariable UUID id, Principal principal) {
+    public ResponseEntity<BaseResponse<Void>> deleteTransaction(@PathVariable UUID id, Principal principal) {
         String userId = principal.getName();
         deleteTransactionUseCase.deleteTransactionById(userId, id);
         return ResponseEntity.ok(BaseResponse.success("Transaction deleted successfully !", null));
-
     }
 
+    @Operation(summary = "Update a transaction")
+    @ApiResponse(responseCode = "200", description = "Transaction updated")
     @PutMapping("/{id}")
     public ResponseEntity<BaseResponse<TransactionResponse>> updateTransaction(
             @PathVariable UUID id,
             @Valid @RequestBody TransactionRequest transactionRequest,
             Principal principal) {
         String userId = principal.getName();
-
         TransactionResponse response = updateTransactionUseCase.updateTransaction(id,
                 new CreateTransactionCommand(
                         transactionRequest.description(),
@@ -103,6 +113,4 @@ public class TransactionController {
         );
         return ResponseEntity.ok(BaseResponse.success("Transaction updated successfully !", response));
     }
-    
-
 }

@@ -33,6 +33,7 @@ public class SecurityConfig {
                         auth.requestMatchers("/actuator/health", "/actuator/prometheus").permitAll();
                         if (isDevMode) {
                             auth.requestMatchers("/actuator/**").permitAll();
+                            auth.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll();
                         }
                         auth.anyRequest().authenticated();
                 })

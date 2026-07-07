@@ -1,20 +1,22 @@
 package com.huynh.personal_expense_be.shared.exception;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterErrors;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
-
-import org.springframework.context.MessageSourceResolvable;
-import org.springframework.validation.method.ParameterErrors;
-import org.springframework.validation.method.ParameterValidationResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,29 +25,32 @@ import java.util.List;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    // -------------------------------------------------------------------------
-    // Domain exceptions
-    // -------------------------------------------------------------------------
-
+    @ApiResponse(responseCode = "404", description = "Resource not found",
+            content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ExceptionResponse> handleNotFoundException(NotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ExceptionResponse.of(ex.getMessage()));
     }
 
+    @ApiResponse(responseCode = "409", description = "Resource already exists",
+            content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
     @ExceptionHandler(DuplicateException.class)
     public ResponseEntity<ExceptionResponse> handleDuplicateException(DuplicateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ExceptionResponse.of(ex.getMessage()));
     }
 
+    @ApiResponse(responseCode = "400", description = "Bad request",
+            content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ExceptionResponse> handleBadRequestException(BadRequestException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ExceptionResponse.of(ex.getMessage()));
     }
 
-
+    @ApiResponse(responseCode = "422", description = "Validation failed",
+            content = @Content(schema = @Schema(implementation = ValidationExceptionResponse.class)))
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ValidationExceptionResponse> handleMethodArgumentNotValid(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -72,7 +77,6 @@ public class GlobalExceptionHandler {
 
         return buildValidationResponse(fieldErrors, request.getRequestURI());
     }
-
 
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ValidationExceptionResponse> handleHandlerMethodValidation(
@@ -107,7 +111,6 @@ public class GlobalExceptionHandler {
         return buildValidationResponse(fieldErrors, request.getRequestURI());
     }
 
-
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ValidationExceptionResponse> handleConstraintViolation(
             ConstraintViolationException ex, HttpServletRequest request) {
@@ -132,31 +135,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessValidationException.class)
     public ResponseEntity<ValidationExceptionResponse> handleBusinessValidation(
             BusinessValidationException ex, HttpServletRequest request) {
-
         return buildValidationResponse(ex.getErrors(), request.getRequestURI());
+    }
 
-}
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleAsyncRequestExceptions(Exception ex, HttpServletRequest request) {
+        log.error("Async request error on {}: {}", request.getRequestURI(), ex.getMessage());
+    }
 
-
-     @ExceptionHandler(AsyncRequestNotUsableException.class)
-     public void handleAsyncRequestExceptions(Exception ex, HttpServletRequest request) {
-         log.error("Async request error on {}: {}", request.getRequestURI(), ex.getMessage());
-        
-     }
-    // -------------------------------------------------------------------------
-    // Catch-all
-    // -------------------------------------------------------------------------
-
+    @ApiResponse(responseCode = "500", description = "Internal server error",
+            content = @Content(schema = @Schema(implementation = ExceptionResponse.class)))
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ExceptionResponse> handleCommonException(Exception ex, HttpServletRequest request) {
         log.error("Unhandled exception on {}: {}", request.getRequestURI(), ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ExceptionResponse.of("An unexpected error occurred. Please try again later."));
     }
-
-    // -------------------------------------------------------------------------
-    // Private helpers
-    // -------------------------------------------------------------------------
 
     private ResponseEntity<ValidationExceptionResponse> buildValidationResponse(
             List<ValidationFieldError> fieldErrors, String path) {
@@ -174,11 +168,6 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    /**
-     * Picks the most specific code from the codes array produced by Spring's
-     * binding infrastructure (codes are ordered from most-specific to least).
-     * Returns the annotation type name only (e.g. "NotBlank" from "NotBlank.user.name").
-     */
     private String extractCode(String[] codes) {
         if (codes == null || codes.length == 0) return null;
         String first = codes[0];
