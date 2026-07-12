@@ -2,7 +2,6 @@ package com.huynh.personal_expense_be.modules.transaction.infrastructure.persist
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -19,6 +18,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.huynh.personal_expense_be.modules.transaction.domain.Transaction;
@@ -39,6 +42,9 @@ public class TransactionPersistenceAdapterTest {
 
     @Mock
     private TransactionMapper transactionMapper;
+
+    @Mock
+    private TransactionJpaRepository transactionJpaRepository;
 
     @Mock
     private TypedQuery<TransactionJpaEntity> typedQuery;
@@ -177,20 +183,11 @@ public class TransactionPersistenceAdapterTest {
         // Given
         GetTransactionCommand command = new GetTransactionCommand(
                 0, 10, "occurredAt", "desc", userId, "Test",
-                java.util.List.of(UUID.randomUUID()), List.of("EXPENSE"), "2023-01-01", "2023-12-31",
-                3, 2023 , BigDecimal.valueOf(5), BigDecimal.valueOf(500));
+                List.of(UUID.randomUUID()), List.of("EXPENSE"), "2023-01-01", "2023-12-31",
+                3, 2023, BigDecimal.valueOf(5), BigDecimal.valueOf(500));
 
-        when(entityManager.createQuery(anyString(), eq(TransactionJpaEntity.class))).thenReturn(typedQuery);
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
-
-        when(typedQuery.setParameter(anyString(), any())).thenReturn(typedQuery);
-        when(countQuery.setParameter(anyString(), any())).thenReturn(countQuery);
-
-        when(countQuery.getSingleResult()).thenReturn(1L);
-        when(typedQuery.setFirstResult(anyInt())).thenReturn(typedQuery);
-        when(typedQuery.setMaxResults(anyInt())).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(java.util.List.of(transactionJpaEntity));
-
+        Page<TransactionJpaEntity> page = new PageImpl<>(List.of(transactionJpaEntity));
+        when(transactionJpaRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
         when(transactionMapper.toDomain(transactionJpaEntity)).thenReturn(transaction);
 
         // When
@@ -211,17 +208,8 @@ public class TransactionPersistenceAdapterTest {
                 null, null, null, null,
                 0, 0, null, null);
 
-        when(entityManager.createQuery(anyString(), eq(TransactionJpaEntity.class))).thenReturn(typedQuery);
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
-
-        when(typedQuery.setParameter("userId", userId)).thenReturn(typedQuery);
-        when(countQuery.setParameter("userId", userId)).thenReturn(countQuery);
-
-        when(countQuery.getSingleResult()).thenReturn(1L);
-        when(typedQuery.setFirstResult(anyInt())).thenReturn(typedQuery);
-        when(typedQuery.setMaxResults(anyInt())).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(java.util.List.of(transactionJpaEntity));
-
+        Page<TransactionJpaEntity> page = new PageImpl<>(List.of(transactionJpaEntity));
+        when(transactionJpaRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
         when(transactionMapper.toDomain(transactionJpaEntity)).thenReturn(transaction);
 
         // When
@@ -242,17 +230,8 @@ public class TransactionPersistenceAdapterTest {
                 List.of(), List.of(), "  ", "  ",
                 -1, -1, null, null);
 
-        when(entityManager.createQuery(anyString(), eq(TransactionJpaEntity.class))).thenReturn(typedQuery);
-        when(entityManager.createQuery(anyString(), eq(Long.class))).thenReturn(countQuery);
-
-        when(typedQuery.setParameter("userId", userId)).thenReturn(typedQuery);
-        when(countQuery.setParameter("userId", userId)).thenReturn(countQuery);
-
-        when(countQuery.getSingleResult()).thenReturn(1L);
-        when(typedQuery.setFirstResult(anyInt())).thenReturn(typedQuery);
-        when(typedQuery.setMaxResults(anyInt())).thenReturn(typedQuery);
-        when(typedQuery.getResultList()).thenReturn(List.of(transactionJpaEntity));
-
+        Page<TransactionJpaEntity> page = new PageImpl<>(List.of(transactionJpaEntity));
+        when(transactionJpaRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
         when(transactionMapper.toDomain(transactionJpaEntity)).thenReturn(transaction);
 
         // When

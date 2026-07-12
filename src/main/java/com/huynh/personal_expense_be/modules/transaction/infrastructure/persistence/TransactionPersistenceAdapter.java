@@ -8,9 +8,12 @@ import com.huynh.personal_expense_be.modules.transaction.domain.TransactionType;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +38,7 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
     @PersistenceContext
     private EntityManager entityManager;
     private final TransactionMapper transactionMapper;
+    private final TransactionJpaRepository transactionJpaRepository;
 
     @Transactional
     @Override
@@ -89,126 +93,65 @@ public class TransactionPersistenceAdapter implements TransactionRepositoryPort 
 
     @Override
     public PageResult<Transaction> findAllWithFilter(GetTransactionCommand command) {
-        StringBuilder where = getWhereQuery(command);
-
         String sortBy = (command.sortBy() != null && ALLOWED_SORT_FIELDS.contains(command.sortBy())) ? command.sortBy() : "occurredAt";
-        String sortDir = (command.sortOrder() != null && command.sortOrder().equalsIgnoreCase("asc")) ? "ASC" : "DESC";
+        Sort.Direction direction = "asc".equalsIgnoreCase(command.sortOrder()) ? Sort.Direction.ASC : Sort.Direction.DESC;
 
-        TypedQuery<TransactionJpaEntity> dataQuery = entityManager.createQuery(
-                "SELECT t FROM TransactionJpaEntity t JOIN FETCH t.category " + where + " ORDER BY t." + sortBy + " "
-                        + sortDir,
-                TransactionJpaEntity.class);
+        int size = command.size() > 0 ? command.size() : 10;
+        PageRequest pageable = PageRequest.of(command.page(), size, Sort.by(direction, sortBy));
 
-        TypedQuery<Long> countQuery = entityManager.createQuery(
-                "SELECT COUNT(t) FROM TransactionJpaEntity t " + where,
-                Long.class);
+        Specification<TransactionJpaEntity> spec = buildSpec(command);
 
-        dataQuery.setParameter("userId", command.userId());
-        countQuery.setParameter("userId", command.userId());
+        log.debug("Min & max amount {} {}", command.minAmount(), command.maxAmount());
+
+        Page<TransactionJpaEntity> result = transactionJpaRepository.findAll(spec, pageable);
+
+        List<Transaction> content = result.getContent().stream()
+                .map(transactionMapper::toDomain)
+                .toList();
+
+        return PageResult.of(content, command.page(), size, result.getTotalElements(),
+                result.getTotalPages(), result.isLast());
+    }
+
+    private Specification<TransactionJpaEntity> buildSpec(GetTransactionCommand command) {
+        ZoneId zone = ZoneId.systemDefault();
+
+        Specification<TransactionJpaEntity> spec = TransactionSpecification.notDeleted()
+                .and(TransactionSpecification.byUserId(command.userId()))
+                .and(TransactionSpecification.withCategory());
 
         if (command.description() != null && !command.description().isBlank()) {
-            dataQuery.setParameter("description", "%" + command.description() + "%");
-            countQuery.setParameter("description", "%" + command.description() + "%");
+            spec = spec.and(TransactionSpecification.descriptionContains(command.description()));
         }
         if (command.categoryIds() != null && !command.categoryIds().isEmpty()) {
-            dataQuery.setParameter("categoryIds", command.categoryIds());
-            countQuery.setParameter("categoryIds", command.categoryIds());
+            spec = spec.and(TransactionSpecification.inCategories(command.categoryIds()));
         }
         if (command.type() != null && !command.type().isEmpty()) {
             List<TransactionType> types = command.type().stream()
                     .map(String::toUpperCase)
                     .map(TransactionType::valueOf)
                     .toList();
-            dataQuery.setParameter("type", types);
-            countQuery.setParameter("type", types);
-        }
-        ZoneId zone = ZoneId.systemDefault();
-
-        if (command.fromDate() != null && !command.fromDate().isBlank()) {
-            LocalDate fromDate = LocalDate.parse(command.fromDate());
-            Instant fromInstant = fromDate.atStartOfDay(zone).toInstant();
-
-            dataQuery.setParameter("fromDate", fromInstant);
-            countQuery.setParameter("fromDate", fromInstant);
-        }
-
-        if (command.toDate() != null && !command.toDate().isBlank()) {
-            LocalDate toDate = LocalDate.parse(command.toDate());
-            Instant toInstant = toDate.atTime(LocalTime.MAX)
-                    .atZone(zone)
-                    .toInstant();
-
-            dataQuery.setParameter("toDate", toInstant);
-            countQuery.setParameter("toDate", toInstant);
-        }
-
-        if (command.month() > 0 && command.year() > 0) {
-            dataQuery.setParameter("month", command.month());
-            dataQuery.setParameter("year", command.year());
-            countQuery.setParameter("month", command.month());
-            countQuery.setParameter("year", command.year());
-        }
-
-        if (command.minAmount() != null) {
-            dataQuery.setParameter("minAmount", command.minAmount());
-            countQuery.setParameter("minAmount", command.minAmount());
-        }
-
-        if (command.maxAmount() != null) {
-            dataQuery.setParameter("maxAmount", command.maxAmount());
-            countQuery.setParameter("maxAmount", command.maxAmount());
-        }
-
-        int page = command.page();
-        int size = command.size() > 0 ? command.size() : 10;
-        dataQuery.setFirstResult(page * size);
-        dataQuery.setMaxResults(size);
-
-        long totalElements = countQuery.getSingleResult();
-        List<Transaction> content = dataQuery.getResultList().stream()
-                .map(transactionMapper::toDomain)
-                .toList();
-
-        int totalPages = size > 0 ? (int) Math.ceil((double) totalElements / size) : 1;
-        boolean isLast = (page + 1) >= totalPages;
-
-        return PageResult.of(content, page, size, totalElements, totalPages, isLast);
-    }
-
-    private static StringBuilder getWhereQuery(GetTransactionCommand command) {
-        StringBuilder where = new StringBuilder("WHERE t.userId = :userId AND t.isDeleted IS NULL");
-
-        if (command.description() != null && !command.description().isBlank()) {
-            where.append(" AND LOWER(t.description) LIKE LOWER(:description)");
-        }
-        if (command.categoryIds() != null && !command.categoryIds().isEmpty()) {
-            where.append(" AND t.category.id IN :categoryIds");
-        }
-        if (command.type() != null && !command.type().isEmpty()) {
-            where.append(" AND t.type IN :type");
+            spec = spec.and(TransactionSpecification.byTypes(types));
         }
         if (command.fromDate() != null && !command.fromDate().isBlank()) {
-            where.append(" AND t.occurredAt >= :fromDate");
+            Instant from = LocalDate.parse(command.fromDate()).atStartOfDay(zone).toInstant();
+            spec = spec.and(TransactionSpecification.fromDate(from));
         }
         if (command.toDate() != null && !command.toDate().isBlank()) {
-            where.append(" AND t.occurredAt <= :toDate");
+            Instant to = LocalDate.parse(command.toDate()).atTime(LocalTime.MAX).atZone(zone).toInstant();
+            spec = spec.and(TransactionSpecification.toDate(to));
         }
-
         if (command.month() > 0 && command.year() > 0) {
-            where.append(" AND MONTH(t.occurredAt) = :month AND YEAR(t.occurredAt) = :year");
+            spec = spec.and(TransactionSpecification.byMonthYear(command.month(), command.year()));
         }
-
-        log.debug("Min & max amount {} {}",command.minAmount(),command.maxAmount());
-
         if (command.minAmount() != null) {
-            where.append(" AND t.amount >= :minAmount");
+            spec = spec.and(TransactionSpecification.minAmount(command.minAmount()));
         }
-        
         if (command.maxAmount() != null) {
-            where.append(" AND t.amount <= :maxAmount");
+            spec = spec.and(TransactionSpecification.maxAmount(command.maxAmount()));
         }
 
-        return where;
+        return spec;
     }
 
 }
