@@ -19,6 +19,7 @@ A RESTful backend service for personal expense tracking, built with **Spring Boo
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Run with Docker Compose](#run-with-docker-compose)
+  - [Deploy with Kubernetes (Helm)](#deploy-with-kubernetes-helm)
   - [Run Locally](#run-locally)
 - [Environment Variables](#environment-variables)
 - [Project Structure](#project-structure)
@@ -40,6 +41,8 @@ A RESTful backend service for personal expense tracking, built with **Spring Boo
 | Reverse Proxy | Nginx |
 | Code Quality | SonarQube, JaCoCo, Checkstyle |
 | Containerization | Docker, Docker Compose |
+| Orchestration | Kubernetes, Helm |
+| Monitoring | Prometheus, Grafana |
 
 ---
 
@@ -348,6 +351,49 @@ docker-compose up -d
 4. Create a client for the frontend application
 5. Configure the issuer URI to match `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI`
 
+### Deploy with Kubernetes (Helm)
+
+Requires a running Kubernetes cluster (Docker Desktop, Minikube, etc.) with `kubectl` and `helm` configured.
+
+```bash
+# Install
+helm install personal-expense-release ./chart
+
+# Upgrade
+helm upgrade personal-expense-release ./chart
+
+# Uninstall
+helm uninstall personal-expense-release
+kubectl delete pvc --all -n default
+```
+
+| Service | Access |
+|---|---|
+| Backend API | `kubectl port-forward svc/personal-expense-release-chart 8080:8080` |
+| Keycloak admin | http://localhost:30080 (NodePort) |
+| Grafana | `kubectl port-forward svc/personal-expense-release-grafana 3000:80` |
+| Prometheus | `kubectl port-forward svc/personal-expense-release-prometheus-server 9090:80` |
+
+**Keycloak first-run setup:**
+1. Open http://localhost:30080, log in with `admin` / `admin`
+2. Create realm `my-realm`
+3. Create a client for the frontend
+
+> **Note:** `ISSUER_URI` is set to `http://localhost:30080/realms/my-realm` to match the NodePort. If you use a different hostname or port, update `backend.env.SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI` in `chart/values.yaml`.
+
+**Helm chart components:**
+
+| Component | Image | Notes |
+|---|---|---|
+| Backend | `ghcr.io/vyzz1/personal-expense-be:latest` | Spring Boot, `/actuator/health` probes |
+| PostgreSQL | Bitnami 18.8.0 | Creates `personal_expense_db` + `keycloak` databases |
+| Keycloak | `quay.io/keycloak/keycloak:26.3.3` | `start-dev` mode, NodePort 30080 |
+| Prometheus | prometheus-community 29.17.0 | Scrapes `/actuator/prometheus` |
+| Grafana | Grafana 10.5.15 | Persistent dashboard storage |
+| Nginx | Bitnami 25.0.14 | NodePort reverse proxy |
+
+---
+
 ### Run Locally
 
 ```bash
@@ -426,6 +472,17 @@ personal-expense-be/
 │   └── test/
 ├── nginx/
 │   └── nginx.conf                                 # Reverse proxy configuration
+├── chart/                                         # Helm chart for Kubernetes
+│   ├── Chart.yaml                                 # Chart metadata & pinned dependencies
+│   ├── Chart.lock                                 # Locked dependency versions
+│   ├── values.yaml                                # Default configuration values
+│   ├── charts/                                    # Downloaded sub-charts (postgresql, prometheus, grafana, nginx)
+│   └── templates/
+│       ├── deployment.yaml                        # Backend deployment
+│       ├── service.yaml                           # Backend service
+│       ├── keycloak-deployment.yaml               # Keycloak (quay.io official image)
+│       ├── keycloak-service.yaml                  # Keycloak NodePort service
+│       └── ...                                    # ingress, hpa, serviceaccount
 ├── docker-compose.yml                             # Full stack orchestration
 ├── Dockerfile                                     # Application container image
 ├── pom.xml                                        # Maven dependencies & plugins
